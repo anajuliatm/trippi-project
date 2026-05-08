@@ -1,73 +1,32 @@
-# React + TypeScript + Vite
+## Como iniciei o projeot
+1. Criação do app React + Vite 
+npm create vite@latest trippi-frontend -- --template react-ts
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+cd trippi-frontend
 
-Currently, two official plugins are available:
+npm install
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+npm install react-router-dom axios zustand framer-motion socket.io-client lucide-react
 
-## React Compiler
+2. Limpeza e criação de módulos
+Apaguei App.css e index.css
+Limpei código default de App.tsx
+Criei a estrutura de pastas modular
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+components/ -> componentes reutilizáveis (botoes, cards, etc)
+pages/ -> telas completas da aplicação (dashboard, financeiro, detalhes)
+layouts/ -> estruturas fixas (sidebar fixa, header)
+services/ -> comunicação externa pra api e websocket
+store/ -> estado global do sistema (usuario logado, viagem selecionada, etc)
+styles/ css global
 
-## Expanding the ESLint configuration
+3. Criei o css global basico
+Código basico com body, button e a
+Importação no main.tsx
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+4. Configurei rotas
+criei AppRoutes.tsx em routes/
+criei DashboardPage em pages/Dashboard/
+atualizei App.tsx com a rota
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+5. Atua
