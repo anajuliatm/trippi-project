@@ -38,3 +38,6 @@ atualizei App.tsx com a rota
 6. criei card de viagem
 - em src/components/dashboard criei TripCard.tsx
 - adicionei o componente na pagina DashboardPage
+
+7. Como rodar
+- npm run dev
