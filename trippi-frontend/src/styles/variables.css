@@ -1,0 +1,15 @@
+:root {
+  --background: #071120;
+
+  --sidebar: #0F1B2D;
+
+  --card: #12243A;
+
+  --primary: #2563EB;
+
+  --primary-light: #60A5FA;
+
+  --text: #E2E8F0;
+
+  --border: rgba(255,255,255,0.08);
+}

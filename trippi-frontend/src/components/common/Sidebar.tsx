@@ -9,28 +9,34 @@ export function Sidebar() {
         padding: "32px"
       }}
     >
-      <h1
-        style={{
-          fontSize: "32px",
-          marginBottom: "48px"
-        }}
-      >
-        Trippi
-      </h1>
+        <div
+            style={{
+                marginBottom: "48px"
+            }}
+        >
+            <img
+                src="/logo.png"
+                alt="Trippi"
+                style={{
+                width: "140px",
+                objectFit: "contain"
+                }}
+            />
+        </div>
 
-      <nav
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "16px"
-        }}
-      >
-        <MenuItem icon={<LayoutDashboard />} label="Dashboard" />
+        <nav
+            style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "16px"
+            }}
+        >
+            <MenuItem icon={<LayoutDashboard />} label="Dashboard" />
 
-        <MenuItem icon={<Plane />} label="Viagens" />
+            <MenuItem icon={<Plane />} label="Viagens" />
 
-        <MenuItem icon={<Wallet />} label="Financeiro" />
-      </nav>
+            <MenuItem icon={<Wallet />} label="Financeiro" />
+        </nav>
     </aside>
   );
 }

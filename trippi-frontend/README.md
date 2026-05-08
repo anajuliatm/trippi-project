@@ -40,5 +40,30 @@ atualizei App.tsx com a rota
 - em src/components/dashboard criei TripCard.tsx
 - adicionei o componente na pagina DashboardPage
 
-7. Como rodar
-- npm run dev
+7. criei paleta de cores azul pro projeto e identidade visual
+- adicionei variables.css em styles
+- importei no css global
+- atualizei css do body
+- adicionei logo
+
+8. criei mock data pra testar interface antes do backend ser criado
+
+9. criei biblioteca de gerenciamento de estado - zustand
+- em src/store/ criei tripStore que permite qualquer componente acessar qual viagem foi selecionada
+- acessam selectedTripId, sem precisar passar props por 10 componentes
+
+10. mudanças em trip card
+- recebe props reais
+- na pagina DashboardPage mostra as viagens com os dados do mock p simular backend
+
+11. criação da cards
+- em components/dashboard/ criei CountdownCard
+- adicionei o card na pagina do dashboard
+- em components/finance/ criei FinanceCard, importei na pagina do dashboard e adicionei os cards na pagina
+- em components/itinerary/ criei Timeline.tsx, importei em dashboard e adc o card
+
+12. proximo passo:
+- melhorar frontend
+
+### Como rodar
+> npm run dev

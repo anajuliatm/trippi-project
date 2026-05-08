@@ -1,25 +1,37 @@
 import { motion } from "framer-motion";
 
-export function TripCard() {
+interface Props {
+  destination: string;
+
+  image: string;
+
+  participants: number;
+}
+
+export function TripCard({
+  destination,
+  image,
+  participants
+}: Props) {
   return (
     <motion.div
       whileHover={{
-        y: -5
+        y: -6
       }}
       style={{
         width: "320px",
 
-        background: "rgba(255,255,255,0.05)",
+        background: "var(--card)",
 
         borderRadius: "28px",
 
         overflow: "hidden",
 
-        border: "1px solid rgba(255,255,255,0.08)"
+        border: "1px solid var(--border)"
       }}
     >
       <img
-        src="https://images.unsplash.com/photo-1502602898657-3e91760cbb34"
+        src={image}
         style={{
           width: "100%",
           height: "220px",
@@ -38,7 +50,7 @@ export function TripCard() {
             marginBottom: "8px"
           }}
         >
-          Paris 2026
+          {destination}
         </h2>
 
         <p
@@ -46,7 +58,7 @@ export function TripCard() {
             opacity: 0.7
           }}
         >
-          5 participantes
+          {participants} participantes
         </p>
       </div>
     </motion.div>
