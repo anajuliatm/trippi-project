@@ -1,5 +1,6 @@
-# 08/05 - Desenvolvimento Inicial
-## Como iniciei o projeot
+# README FRONT (Temporario para organização de ideias)
+## 08/05 - Desenvolvimento Inicial
+### Como iniciei o projeot
 1. Criação do app React + Vite 
 npm create vite@latest trippi-frontend -- --template react-ts
 
