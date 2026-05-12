@@ -15,11 +15,14 @@ export function Sidebar() {
             }}
         >
             <img
-                src="/logo.png"
+                src="/logo-ico.png"
                 alt="Trippi"
                 style={{
-                width: "140px",
-                objectFit: "contain"
+                  width: "140px",
+                  height: "auto",
+                  maxHeight: "56px",
+                  display: "block",
+                  objectFit: "contain"
                 }}
             />
         </div>
