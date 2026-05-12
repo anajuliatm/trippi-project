@@ -1,12 +1,16 @@
 import { MainLayout } from "../../layouts/MainLayout";
 import { TripCard } from "../../components/dashboard/TripCard";
-import { trips } from "../../mock/trips";
+import { calculateDaysRemaining, trips } from "../../mock/trips";
 import { CountdownCard } from "../../components/dashboard/CountdownCard";
 import { FinanceCard } from "../../components/finance/FinanceCard";
 import { Timeline } from "../../components/itinerary/Timeline";
+import { useNavigate } from "react-router-dom";
 import "../../styles/dashboard.css";
 
 export function DashboardPage() {
+  const navigate = useNavigate();
+  const nextTrip = trips[0];
+
   return (
     <MainLayout>
       <div className="dashboard">
@@ -19,11 +23,17 @@ export function DashboardPage() {
               destination={trip.destination}
               image={trip.image}
               participants={trip.participants}
+              onClick={() => navigate(`/trip/${trip.id}`)}
             />
           ))}
         </div>
 
-        <CountdownCard destination="Paris" days={10} />
+        {nextTrip && (
+          <CountdownCard
+            destination={nextTrip.destination}
+            days={calculateDaysRemaining(nextTrip.departureDate)}
+          />
+        )}
 
         <div className="dashboard__finance">
           <FinanceCard title="Orçamento" value="R$ 8.500" />

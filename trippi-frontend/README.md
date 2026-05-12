@@ -77,3 +77,16 @@ atualizei App.tsx com a rota
 3. corrigi alguns css para melhorar a interface e a responsividade:
 - correção do espaçamento entre os componentens
 - sidebar fixa para acompanhar a navegação
+
+4. criei novas paginas para a navegação
+- expandi os dados em trips.ts de src/mock/ com itinerarios por dia e utilitarios
+- deixei o card TripCard.tsx clicavel (components/dashboard/)
+- atualizei DashboardPage.tsx para redirecionar a pagina clicada
+- adicionei a rota em AppRoutes.tsx, ex: trip/id (src/routes/)
+- criei uma nova pagina TripDetailsPage.tsx
+    - capa
+    - destaque ao financeiro
+    - passeios do roteiro organizados por aba
+- ajustei o css do card (card.css) para melhorar a responsividade e a aparencia
+
+

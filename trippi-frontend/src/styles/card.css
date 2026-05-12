@@ -10,6 +10,15 @@
   width: 320px;
   border-radius: 28px;
   overflow: hidden;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+  transition: box-shadow 200ms ease, border-color 200ms ease;
+}
+
+.trip-card:hover {
+  border-color: rgba(96, 165, 250, 0.45);
+  box-shadow: 0 20px 40px rgba(6, 18, 33, 0.45);
 }
 
 .trip-card__image {
