@@ -1,5 +1,12 @@
 .sidebar {
   width: 280px;
+  flex-shrink: 0;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  overflow-y: auto;
+  background: var(--sidebar);
   border-right: 1px solid rgba(255, 255, 255, 0.08);
   padding: 32px;
 }
@@ -30,4 +37,33 @@
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.04);
   backdrop-filter: blur(12px);
+}
+
+@media (max-width: 1024px) {
+  .sidebar {
+    width: 240px;
+    padding: 24px;
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: static;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .sidebar__logo {
+    margin-bottom: 20px;
+  }
+
+  .sidebar__nav {
+    gap: 12px;
+  }
+
+  .menu-item {
+    padding: 14px;
+  }
 }

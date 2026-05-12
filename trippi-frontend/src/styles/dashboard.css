@@ -1,6 +1,11 @@
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(24px, 3vw, 36px);
+}
+
 .dashboard__title {
   font-size: 42px;
-  margin-bottom: 32px;
 }
 
 .dashboard__trips {
@@ -12,5 +17,16 @@
 .dashboard__finance {
   display: flex;
   gap: 24px;
-  margin-bottom: 40px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .dashboard__title {
+    font-size: 34px;
+  }
+
+  .dashboard__trips,
+  .dashboard__finance {
+    gap: 16px;
+  }
 }

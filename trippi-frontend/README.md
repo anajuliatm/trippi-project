@@ -73,3 +73,7 @@ atualizei App.tsx com a rota
 1. troquei o logo por um de melhor resolução
 
 2. refatorei os códigos do front para centralizar os .css na pasta styles e nao ter código css jogado por ai
+
+3. corrigi alguns css para melhorar a interface e a responsividade:
+- correção do espaçamento entre os componentens
+- sidebar fixa para acompanhar a navegação
