@@ -67,3 +67,36 @@ atualizei App.tsx com a rota
 
 ### Como rodar
 > npm run dev
+
+## 15/05 - Refatoração de alguns códigos
+
+1. troquei o logo por um de melhor resolução
+
+2. refatorei os códigos do front para centralizar os .css na pasta styles e nao ter código css jogado por ai
+
+3. corrigi alguns css para melhorar a interface e a responsividade:
+- correção do espaçamento entre os componentens
+- sidebar fixa para acompanhar a navegação
+
+4. criei novas paginas para a navegação
+- expandi os dados em trips.ts de src/mock/ com itinerarios por dia e utilitarios
+- deixei o card TripCard.tsx clicavel (components/dashboard/)
+- atualizei DashboardPage.tsx para redirecionar a pagina clicada
+- adicionei a rota em AppRoutes.tsx, ex: trip/id (src/routes/)
+- criei uma nova pagina TripDetailsPage.tsx
+    - capa
+    - destaque ao financeiro
+    - passeios do roteiro organizados por aba
+- ajustei o css do card (card.css) para melhorar a responsividade e a aparencia
+
+5. criei pagina que lista as viagens:
+- adicionei a rota para esssa pagina em routes/AppRoutes.jsx
+- na tela das viagens criei:
+    - aba 'ativas' e 'concluidas' com destaque visual
+    - cards das viagens
+    - navegação para pagina detalhes ao clicar na viagem
+    - css em trips-pages.css
+    - atualizei a sidebar para suportar a navegação
+    - atualizei um mock de uma viagem concluida pra mostrar na pagina
+        - obs: dashboard só mostra viagens ativas
+

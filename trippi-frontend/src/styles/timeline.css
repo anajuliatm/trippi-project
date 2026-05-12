@@ -1,0 +1,41 @@
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.timeline__title {
+  margin-bottom: 8px;
+  font-size: 28px;
+}
+
+.timeline__item {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 24px;
+  align-items: center;
+}
+
+.timeline__time {
+  color: #60a5fa;
+  font-weight: 700;
+  line-height: 1;
+  text-align: right;
+}
+
+.timeline__content {
+  padding: 20px;
+  border-radius: 18px;
+  flex: 1;
+}
+
+@media (max-width: 768px) {
+  .timeline__item {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .timeline__time {
+    text-align: left;
+  }
+}

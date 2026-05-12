@@ -1,66 +1,28 @@
 import { motion } from "framer-motion";
+import "../../styles/card.css";
 
 interface Props {
   destination: string;
-
   image: string;
-
   participants: number;
+  onClick?: () => void;
 }
 
-export function TripCard({
-  destination,
-  image,
-  participants
-}: Props) {
+export function TripCard({ destination, image, participants, onClick }: Props) {
   return (
-    <motion.div
-      whileHover={{
-        y: -6
-      }}
-      style={{
-        width: "320px",
-
-        background: "var(--card)",
-
-        borderRadius: "28px",
-
-        overflow: "hidden",
-
-        border: "1px solid var(--border)"
-      }}
+    <motion.button
+      className="card trip-card"
+      whileHover={{ y: -6 }}
+      whileTap={{ scale: 0.99 }}
+      onClick={onClick}
+      type="button"
     >
-      <img
-        src={image}
-        style={{
-          width: "100%",
-          height: "220px",
-          objectFit: "cover"
-        }}
-      />
+      <img src={image} className="trip-card__image" />
 
-      <div
-        style={{
-          padding: "24px"
-        }}
-      >
-        <h2
-          style={{
-            fontSize: "28px",
-            marginBottom: "8px"
-          }}
-        >
-          {destination}
-        </h2>
-
-        <p
-          style={{
-            opacity: 0.7
-          }}
-        >
-          {participants} participantes
-        </p>
+      <div className="trip-card__body">
+        <h2 className="trip-card__title">{destination}</h2>
+        <p className="trip-card__participants">{participants} participantes</p>
       </div>
-    </motion.div>
+    </motion.button>
   );
 }

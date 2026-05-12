@@ -1,0 +1,38 @@
+.countdown {
+  background: linear-gradient(135deg, #2563eb, #60a5fa);
+  padding: 40px;
+  border-radius: 32px;
+}
+
+.countdown__label {
+  opacity: 0.8;
+}
+
+.countdown__title {
+  font-size: 52px;
+  margin-top: 12px;
+}
+
+.countdown__counter {
+  margin-top: 24px;
+}
+
+.countdown__days {
+  font-size: 72px;
+  font-weight: bold;
+}
+
+@media (max-width: 768px) {
+  .countdown {
+    padding: 28px;
+    border-radius: 24px;
+  }
+
+  .countdown__title {
+    font-size: 38px;
+  }
+
+  .countdown__days {
+    font-size: 56px;
+  }
+}
