@@ -2,22 +2,23 @@ import { MainLayout } from "../../layouts/MainLayout";
 import { TripCard } from "../../components/dashboard/TripCard";
 import { calculateDaysRemaining, trips } from "../../mock/trips";
 import { CountdownCard } from "../../components/dashboard/CountdownCard";
-import { FinanceCard } from "../../components/finance/FinanceCard";
-import { Timeline } from "../../components/itinerary/Timeline";
+// import { FinanceCard } from "../../components/finance/FinanceCard";
+// import { Timeline } from "../../components/itinerary/Timeline";
 import { useNavigate } from "react-router-dom";
 import "../../styles/dashboard.css";
 
 export function DashboardPage() {
   const navigate = useNavigate();
-  const nextTrip = trips[0];
+  const activeTrips = trips.filter((trip) => trip.status === "active");
+  const nextTrip = activeTrips[0];
 
   return (
     <MainLayout>
       <div className="dashboard">
-        <h1 className="dashboard__title">Suas viagens</h1>
+        <h1 className="dashboard__title">Próximas viagens</h1>
 
         <div className="dashboard__trips">
-          {trips.map((trip) => (
+          {activeTrips.map((trip) => (
             <TripCard
               key={trip.id}
               destination={trip.destination}
@@ -35,13 +36,6 @@ export function DashboardPage() {
           />
         )}
 
-        <div className="dashboard__finance">
-          <FinanceCard title="Orçamento" value="R$ 8.500" />
-          <FinanceCard title="Gasto" value="R$ 3.200" />
-          <FinanceCard title="Saldo" value="R$ 5.300" />
-        </div>
-
-        <Timeline />
       </div>
     </MainLayout>
   );

@@ -11,12 +11,15 @@ export interface TripItineraryDay {
   activities: TripActivity[];
 }
 
+export type TripStatus = "active" | "completed";
+
 export interface Trip {
   id: number;
   destination: string;
   image: string;
   participants: number;
   departureDate: string;
+  status: TripStatus;
   budget: number;
   spent: number;
   itinerary: TripItineraryDay[];
@@ -30,6 +33,7 @@ export const trips: Trip[] = [
       "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=1800&q=80",
     participants: 5,
     departureDate: "2026-07-25",
+    status: "active",
     budget: 8500,
     spent: 3200,
     itinerary: [
@@ -113,6 +117,7 @@ export const trips: Trip[] = [
       "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=1800&q=80",
     participants: 3,
     departureDate: "2026-08-10",
+    status: "active",
     budget: 12000,
     spent: 5400,
     itinerary: [
@@ -151,6 +156,38 @@ export const trips: Trip[] = [
             description: "Roteiro cultural com tempo livre para lojinhas.",
             location: "Taito City",
             notes: "Evitar horário de pico do metrô na volta."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: 3,
+    destination: "Lisboa",
+    image:
+      "https://images.unsplash.com/photo-1513735492246-483525079686?auto=format&fit=crop&w=1800&q=80",
+    participants: 4,
+    departureDate: "2026-03-18",
+    status: "completed",
+    budget: 6400,
+    spent: 5980,
+    itinerary: [
+      {
+        date: "2026-03-18",
+        activities: [
+          {
+            time: "09:00",
+            title: "Passeio em Belem",
+            description: "Visita aos principais pontos historicos da regiao.",
+            location: "Mosteiro dos Jeronimos",
+            notes: "Ingressos reservados com antecedencia."
+          },
+          {
+            time: "20:00",
+            title: "Noite de fado",
+            description: "Jantar com apresentacao tradicional portuguesa.",
+            location: "Alfama",
+            notes: "Confirmar restricoes alimentares do grupo."
           }
         ]
       }

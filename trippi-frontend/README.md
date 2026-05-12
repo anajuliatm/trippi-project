@@ -89,4 +89,14 @@ atualizei App.tsx com a rota
     - passeios do roteiro organizados por aba
 - ajustei o css do card (card.css) para melhorar a responsividade e a aparencia
 
+5. criei pagina que lista as viagens:
+- adicionei a rota para esssa pagina em routes/AppRoutes.jsx
+- na tela das viagens criei:
+    - aba 'ativas' e 'concluidas' com destaque visual
+    - cards das viagens
+    - navegação para pagina detalhes ao clicar na viagem
+    - css em trips-pages.css
+    - atualizei a sidebar para suportar a navegação
+    - atualizei um mock de uma viagem concluida pra mostrar na pagina
+        - obs: dashboard só mostra viagens ativas
 
