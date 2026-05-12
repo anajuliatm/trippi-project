@@ -67,3 +67,9 @@ atualizei App.tsx com a rota
 
 ### Como rodar
 > npm run dev
+
+## 15/05 - Refatoração de alguns códigos
+
+1. troquei o logo por um de melhor resolução
+
+2. refatorei os códigos do front para centralizar os .css na pasta styles e nao ter código css jogado por ai
