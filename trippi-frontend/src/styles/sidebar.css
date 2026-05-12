@@ -1,0 +1,33 @@
+.sidebar {
+  width: 280px;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 32px;
+}
+
+.sidebar__logo {
+  margin-bottom: 48px;
+}
+
+.sidebar__logo-img {
+  width: 140px;
+  height: auto;
+  max-height: 56px;
+  display: block;
+  object-fit: contain;
+}
+
+.sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.menu-item {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(12px);
+}

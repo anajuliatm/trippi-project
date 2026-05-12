@@ -1,0 +1,16 @@
+.dashboard__title {
+  font-size: 42px;
+  margin-bottom: 32px;
+}
+
+.dashboard__trips {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.dashboard__finance {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 40px;
+}

@@ -1,0 +1,25 @@
+.timeline {
+  margin-top: 48px;
+}
+
+.timeline__title {
+  margin-bottom: 24px;
+  font-size: 28px;
+}
+
+.timeline__item {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.timeline__time {
+  color: #60a5fa;
+  font-weight: bold;
+}
+
+.timeline__content {
+  padding: 20px;
+  border-radius: 18px;
+  flex: 1;
+}

@@ -1,4 +1,5 @@
 import { Sidebar } from "../components/common/Sidebar";
+import "../styles/layout.css";
 
 interface Props {
   children: React.ReactNode;
@@ -6,21 +7,10 @@ interface Props {
 
 export function MainLayout({ children }: Props) {
   return (
-    <div
-      style={{
-        display: "flex",
-        minHeight: "100vh",
-        background: "#071120"
-      }}
-    >
+    <div className="layout">
       <Sidebar />
 
-      <main
-        style={{
-          flex: 1,
-          padding: "40px"
-        }}
-      >
+      <main className="layout__main">
         {children}
       </main>
     </div>
