@@ -37,7 +37,6 @@ export function TripsPage() {
       <div className="trips-page">
         <header className="trips-page__header">
           <h1>Todas as viagens</h1>
-          <p>Gerencie viagens em andamento e historico concluido em um unico lugar.</p>
         </header>
 
         <div className="trips-tabs" role="tablist" aria-label="Filtrar viagens por status">
@@ -93,8 +92,7 @@ export function TripsPage() {
           </section>
         ) : (
           <section className="trips-empty">
-            <h2>Nenhuma viagem nesta aba</h2>
-            <p>Quando houver viagens deste tipo, elas aparecerao aqui.</p>
+            <h2>Nenhuma viagem cadastrada.</h2>
           </section>
         )}
       </div>
