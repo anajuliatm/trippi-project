@@ -12,7 +12,7 @@ export function Sidebar() {
       <nav className="sidebar__nav">
         <MenuItem icon={<LayoutDashboard />} label="Dashboard" to="/" end />
         <MenuItem icon={<Plane />} label="Viagens" to="/trips" />
-        <MenuItem icon={<Wallet />} label="Financeiro" />
+        <MenuItem icon={<Wallet />} label="Financeiro" to="/finance" />
       </nav>
     </aside>
   );

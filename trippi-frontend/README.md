@@ -100,3 +100,20 @@ atualizei App.tsx com a rota
     - atualizei um mock de uma viagem concluida pra mostrar na pagina
         - obs: dashboard só mostra viagens ativas
 
+## 19/05 - Edição de front-end + Criação da página financeiro
+- correção no hover que eu nao estava gostando - agora o card só "salta", nao fica com uma borda colorida no hover
+
+- edição do botão de voltar
+    - volta pra pagina anterior e nao sempre pra Dashboard
+    - componentização do botão voltar para ser reutilizado
+
+- Detalhes da Viagem
+    - organização por abas
+
+- Adição de ícones para futuro CRUD
+
+- criação da página de Finanças
+    - adicionado a rota em AppRoutes
+    - criação da pagina FinancePage.tsx
+    - criação do mock de finanças (finance.ts)
+    - redirecionamento da sidebar no botão Financeiro
