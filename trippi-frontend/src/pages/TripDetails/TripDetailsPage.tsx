@@ -1,7 +1,8 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, CalendarDays, Clock3, MapPin, Users } from "lucide-react";
+import { CalendarDays, Clock3, MapPin, Users } from "lucide-react";
 import { useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import { BackButton } from "../../components/common/BackButton";
 import { MainLayout } from "../../layouts/MainLayout";
 import {
   calculateDaysRemaining,
@@ -114,7 +115,6 @@ function ItineraryTabs({ trip }: { trip: Trip }) {
 }
 
 export function TripDetailsPage() {
-  const navigate = useNavigate();
   const { id } = useParams();
   const tripId = Number(id);
 
@@ -132,14 +132,7 @@ export function TripDetailsPage() {
         <div className="trip-details-empty">
           <h1>Viagem nao encontrada</h1>
           <p>Confira o link e selecione uma viagem valida no dashboard.</p>
-          <button
-            type="button"
-            className="trip-details-empty__link"
-            onClick={() => navigate(-1)}
-            aria-label="Voltar para a pagina anterior"
-          >
-            <ArrowLeft size={18} aria-hidden="true" />
-          </button>
+          <BackButton className="trip-details-empty__link" />
         </div>
       </MainLayout>
     );
@@ -159,14 +152,7 @@ export function TripDetailsPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, ease: "easeOut" }}
           >
-            <button
-              type="button"
-              className="trip-hero__back-link"
-              onClick={() => navigate(-1)}
-              aria-label="Voltar para a pagina anterior"
-            >
-              <ArrowLeft size={18} aria-hidden="true" />
-            </button>
+            <BackButton className="trip-hero__back-link" />
 
             <h1>{trip.destination}</h1>
 
