@@ -117,3 +117,13 @@ atualizei App.tsx com a rota
     - criação da pagina FinancePage.tsx
     - criação do mock de finanças (finance.ts)
     - redirecionamento da sidebar no botão Financeiro
+
+- criação da página de login/cadastro
+    - criação do css do login em login-page.css
+    - adição da rota em AppRoutes.tsx
+    - criação da pagina LoginPage.tsx
+
+- logout na sidebar
+    - mudanças no css da sidebar para suportar
+    - adição no componente comum da sidedar
+

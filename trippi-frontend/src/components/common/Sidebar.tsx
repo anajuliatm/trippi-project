@@ -1,8 +1,10 @@
-import { LayoutDashboard, Wallet, Plane } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import { LayoutDashboard, Wallet, Plane, LogOut } from "lucide-react";
+import { NavLink, useNavigate } from "react-router-dom";
 import "../../styles/sidebar.css";
 
 export function Sidebar() {
+  const navigate = useNavigate();
+
   return (
     <aside className="sidebar">
       <div className="sidebar__logo">
@@ -10,10 +12,21 @@ export function Sidebar() {
       </div>
 
       <nav className="sidebar__nav">
-        <MenuItem icon={<LayoutDashboard />} label="Dashboard" to="/" end />
+        <MenuItem icon={<LayoutDashboard />} label="Dashboard" to="/dashboard" end />
         <MenuItem icon={<Plane />} label="Viagens" to="/trips" />
         <MenuItem icon={<Wallet />} label="Financeiro" to="/finance" />
       </nav>
+
+      <div className="sidebar__logout">
+        <button
+          type="button"
+          className="menu-item menu-item--logout"
+          onClick={() => navigate("/")}
+        >
+          <LogOut />
+          <span>Logout</span>
+        </button>
+      </div>
     </aside>
   );
 }

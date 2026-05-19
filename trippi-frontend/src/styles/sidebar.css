@@ -1,5 +1,7 @@
 .sidebar {
   width: 280px;
+  display: flex;
+  flex-direction: column;
   flex-shrink: 0;
   height: 100vh;
   position: sticky;
@@ -29,6 +31,11 @@
   gap: 16px;
 }
 
+.sidebar__logout {
+  margin-top: auto;
+  padding-top: 24px;
+}
+
 .menu-item {
   display: flex;
   gap: 12px;
@@ -50,6 +57,16 @@
 .menu-item.is-active {
   background: linear-gradient(150deg, rgba(37, 99, 235, 0.4), rgba(30, 64, 175, 0.3));
   box-shadow: 0 12px 28px rgba(8, 20, 38, 0.45);
+}
+
+.menu-item--logout {
+  width: 100%;
+  color: white;
+  background: #3976c0;
+}
+
+.menu-item--logout:hover {
+  background: #2b588f;
 }
 
 @media (max-width: 1024px) {
@@ -74,6 +91,11 @@
 
   .sidebar__nav {
     gap: 12px;
+  }
+
+  .sidebar__logout {
+    margin-top: 14px;
+    padding-top: 0;
   }
 
   .menu-item {
