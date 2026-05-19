@@ -19,6 +19,7 @@ export interface Trip {
   image: string;
   participants: number;
   departureDate: string;
+  endDate: string;
   status: TripStatus;
   budget: number;
   spent: number;
@@ -33,6 +34,7 @@ export const trips: Trip[] = [
       "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=1800&q=80",
     participants: 5,
     departureDate: "2026-07-25",
+    endDate: "2026-07-27",
     status: "active",
     budget: 8500,
     spent: 3200,
@@ -117,6 +119,7 @@ export const trips: Trip[] = [
       "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=1800&q=80",
     participants: 3,
     departureDate: "2026-08-10",
+    endDate: "2026-08-11",
     status: "active",
     budget: 12000,
     spent: 5400,
@@ -168,6 +171,7 @@ export const trips: Trip[] = [
       "https://images.unsplash.com/photo-1513735492246-483525079686?auto=format&fit=crop&w=1800&q=80",
     participants: 4,
     departureDate: "2026-03-18",
+    endDate: "2026-03-18",
     status: "completed",
     budget: 6400,
     spent: 5980,
