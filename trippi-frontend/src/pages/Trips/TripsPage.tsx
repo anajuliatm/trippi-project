@@ -1,7 +1,8 @@
 import { motion } from "framer-motion";
-import { CalendarDays, Plus, Users } from "lucide-react";
+import { CalendarDays, Plus, Trash2, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Modal } from "../../components/common/Modal";
 import { MainLayout } from "../../layouts/MainLayout";
 import { trips, type TripStatus } from "../../mock/trips";
 import "../../styles/trips-page.css";
@@ -24,13 +25,63 @@ function formatDate(date: string) {
   }).format(new Date(date));
 }
 
+function getTodayDate() {
+  const today = new Date();
+  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(
+    today.getDate()
+  ).padStart(2, "0")}`;
+}
+
+interface NewTripForm {
+  destination: string;
+  imageFile: File | null;
+  departureDate: string;
+  endDate: string;
+  participants: string[];
+}
+
 export function TripsPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TripStatus>("active");
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [newTripForm, setNewTripForm] = useState<NewTripForm>({
+    destination: "",
+    imageFile: null,
+    departureDate: getTodayDate(),
+    endDate: getTodayDate(),
+    participants: [],
+  });
+  const [newParticipantName, setNewParticipantName] = useState("");
 
   const filteredTrips = useMemo(() => {
     return trips.filter((trip) => trip.status === activeTab);
   }, [activeTab]);
+
+  function handleSaveNewTrip() {
+    setIsAddModalOpen(false);
+    setNewTripForm({
+      destination: "",
+      imageFile: null,
+      departureDate: getTodayDate(),
+      endDate: getTodayDate(),
+      participants: [],
+    });
+    setNewParticipantName("");
+  }
+
+  function handleAddParticipant() {
+    const trimmedName = newParticipantName.trim();
+
+    if (!trimmedName) {
+      return;
+    }
+
+    setNewTripForm((previous) => ({
+      ...previous,
+      participants: [...previous.participants, trimmedName],
+    }));
+    setNewParticipantName("");
+  }
 
   return (
     <MainLayout>
@@ -54,7 +105,12 @@ export function TripsPage() {
           ))}
         </div>
 
-        <button type="button" className="trips-page__add-btn" aria-label="Adicionar viagem">
+        <button
+          type="button"
+          className="trips-page__add-btn"
+          aria-label="Adicionar viagem"
+          onClick={() => setIsAddModalOpen(true)}
+        >
           <Plus size={16} />
           <span>Adicionar viagem</span>
         </button>
@@ -100,6 +156,129 @@ export function TripsPage() {
             <h2>Nenhuma viagem cadastrada.</h2>
           </section>
         )}
+
+        <Modal
+          open={isAddModalOpen}
+          title="Adicionar viagem"
+          onClose={() => setIsAddModalOpen(false)}
+          footer={
+            <>
+              <button type="button" className="modal-btn" onClick={() => setIsAddModalOpen(false)}>
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="modal-btn modal-btn--primary"
+                onClick={handleSaveNewTrip}
+              >
+                Salvar viagem
+              </button>
+            </>
+          }
+        >
+          <form className="modal-form" onSubmit={(event) => event.preventDefault()}>
+            <div className="modal-form__row">
+              <label htmlFor="trip-destination">Destino</label>
+              <input
+                id="trip-destination"
+                type="text"
+                placeholder="Ex.: Santiago"
+                value={newTripForm.destination}
+                onChange={(event) =>
+                  setNewTripForm((previous) => ({ ...previous, destination: event.target.value }))
+                }
+              />
+            </div>
+
+            <div className="modal-form__row">
+              <label htmlFor="trip-image-file">Imagem de capa (PNG/JPG/JPEG)</label>
+              <input
+                id="trip-image-file"
+                type="file"
+                accept=".png,.jpg,.jpeg,image/png,image/jpeg"
+                onChange={(event) => {
+                  const file = event.target.files?.[0] ?? null;
+                  setNewTripForm((previous) => ({ ...previous, imageFile: file }));
+                }}
+              />
+              {newTripForm.imageFile ? <small>Arquivo selecionado: {newTripForm.imageFile.name}</small> : null}
+            </div>
+
+            <div className="modal-inline-fields">
+              <div className="modal-form__row">
+                <label htmlFor="trip-departure-date">Data de ida</label>
+                <input
+                  id="trip-departure-date"
+                  type="date"
+                  value={newTripForm.departureDate}
+                  onChange={(event) =>
+                    setNewTripForm((previous) => ({
+                      ...previous,
+                      departureDate: event.target.value,
+                    }))
+                  }
+                />
+              </div>
+
+              <div className="modal-form__row">
+                <label htmlFor="trip-end-date">Data de volta</label>
+                <input
+                  id="trip-end-date"
+                  type="date"
+                  value={newTripForm.endDate}
+                  onChange={(event) =>
+                    setNewTripForm((previous) => ({ ...previous, endDate: event.target.value }))
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="modal-form__row">
+              <label htmlFor="trip-participant-name">Participantes</label>
+
+              <div className="trip-participants-editor">
+                <div className="trip-participants-editor__list">
+                  {newTripForm.participants.length > 0 ? (
+                    newTripForm.participants.map((participant, index) => (
+                      <span key={`${participant}-${index}`} className="trip-participant-chip">
+                        {participant}
+                        <button
+                          type="button"
+                          aria-label={`Excluir participante ${participant}`}
+                          onClick={() =>
+                            setNewTripForm((previous) => ({
+                              ...previous,
+                              participants: previous.participants.filter(
+                                (_, participantIndex) => participantIndex !== index
+                              ),
+                            }))
+                          }
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </span>
+                    ))
+                  ) : (
+                    <p className="trip-participants-editor__empty">Nenhum participante adicionado.</p>
+                  )}
+                </div>
+
+                <div className="trip-participants-editor__add-row">
+                  <input
+                    id="trip-participant-name"
+                    type="text"
+                    placeholder="Nome do usuario"
+                    value={newParticipantName}
+                    onChange={(event) => setNewParticipantName(event.target.value)}
+                  />
+                  <button type="button" className="modal-btn" onClick={handleAddParticipant}>
+                    Adicionar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </form>
+        </Modal>
       </div>
     </MainLayout>
   );

@@ -1,0 +1,208 @@
+.app-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.app-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  border: none;
+  background: rgba(2, 8, 23, 0.72);
+  backdrop-filter: blur(3px);
+}
+
+.app-modal__panel {
+  position: relative;
+  width: min(100%, 620px);
+  max-height: min(88vh, 760px);
+  border-radius: 22px;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.38);
+  background: linear-gradient(160deg, rgba(8, 24, 42, 0.98), rgba(5, 15, 28, 0.98));
+  box-shadow: 0 28px 60px rgba(2, 8, 18, 0.65);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+}
+
+.app-modal__panel--sm {
+  width: min(100%, 460px);
+}
+
+.app-modal__panel--lg {
+  width: min(100%, 760px);
+}
+
+.app-modal__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.24);
+}
+
+.app-modal__header h2 {
+  font-size: clamp(21px, 2.8vw, 28px);
+}
+
+.app-modal__header p {
+  margin-top: 5px;
+  color: rgba(226, 232, 240, 0.78);
+}
+
+.app-modal__close {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(15, 27, 45, 0.66);
+  color: var(--text);
+}
+
+.app-modal__content {
+  padding: 20px;
+  overflow: auto;
+}
+
+.app-modal__footer {
+  padding: 16px 20px 20px;
+  border-top: 1px solid rgba(148, 163, 184, 0.24);
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.modal-btn {
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  background: rgba(15, 27, 45, 0.72);
+  color: var(--text);
+  padding: 10px 14px;
+  font-weight: 600;
+}
+
+.modal-btn--primary {
+  border-color: rgba(96, 165, 250, 0.65);
+  background: linear-gradient(150deg, rgba(37, 99, 235, 0.5), rgba(30, 64, 175, 0.66));
+}
+
+.modal-btn--danger {
+  border-color: rgba(248, 113, 113, 0.65);
+  background: linear-gradient(150deg, rgba(239, 68, 68, 0.42), rgba(153, 27, 27, 0.64));
+}
+
+.modal-form {
+  display: grid;
+  gap: 12px;
+}
+
+.modal-form__row {
+  display: grid;
+  gap: 6px;
+}
+
+.modal-form__row label {
+  font-size: 14px;
+  color: rgba(191, 219, 254, 0.9);
+}
+
+.modal-form__row input,
+.modal-form__row select,
+.modal-form__row textarea {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  background: rgba(15, 27, 45, 0.62);
+  color: var(--text);
+  padding: 10px 12px;
+}
+
+.modal-form__row textarea {
+  resize: vertical;
+  min-height: 84px;
+}
+
+.modal-inline-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+.modal-callout {
+  border-radius: 14px;
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  background: rgba(127, 29, 29, 0.28);
+  padding: 12px;
+  color: rgba(254, 226, 226, 0.95);
+}
+
+.trip-participants-editor {
+  display: grid;
+  gap: 10px;
+}
+
+.trip-participants-editor__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.trip-participant-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(96, 165, 250, 0.44);
+  background: rgba(30, 64, 175, 0.32);
+  padding: 6px 10px;
+  font-size: 14px;
+}
+
+.trip-participant-chip button {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid rgba(248, 113, 113, 0.5);
+  background: rgba(127, 29, 29, 0.32);
+  color: rgba(254, 226, 226, 0.95);
+  padding: 0;
+}
+
+.trip-participants-editor__empty {
+  color: rgba(226, 232, 240, 0.78);
+}
+
+.trip-participants-editor__add-row {
+  display: flex;
+  gap: 10px;
+}
+
+.trip-participants-editor__add-row input {
+  flex: 1;
+}
+
+@media (max-width: 640px) {
+  .app-modal {
+    padding: 10px;
+  }
+
+  .app-modal__panel {
+    border-radius: 18px;
+  }
+
+  .modal-inline-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .trip-participants-editor__add-row {
+    flex-direction: column;
+  }
+}
