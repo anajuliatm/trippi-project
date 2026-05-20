@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { CalendarDays, Users } from "lucide-react";
+import { CalendarDays, Plus, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MainLayout } from "../../layouts/MainLayout";
@@ -53,6 +53,11 @@ export function TripsPage() {
             </button>
           ))}
         </div>
+
+        <button type="button" className="trips-page__add-btn" aria-label="Adicionar viagem">
+          <Plus size={16} />
+          <span>Adicionar viagem</span>
+        </button>
 
         {filteredTrips.length > 0 ? (
           <section className="trips-grid">

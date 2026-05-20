@@ -96,7 +96,7 @@ function OverviewTab({ trip, daysRemaining }: { trip: Trip; daysRemaining: numbe
         >
           <div className="trip-hero__title-row">
             <h1>{trip.destination}</h1>
-            <ActionButtons modes={["edit"]} />
+            <ActionButtons modes={["edit", "delete"]} />
           </div>
 
           <div className="trip-hero__meta-grid">
@@ -166,7 +166,7 @@ function ItineraryTabs({ trip }: { trip: Trip }) {
     <section className="trip-itinerary">
       <div className="trip-section__header">
         <h2 className="trip-section-title">Roteiro</h2>
-        <ActionButtons modes={["add", "edit", "delete"]} />
+        <ActionButtons modes={["add"]} />
       </div>
 
       <div className="trip-itinerary__tabs">
