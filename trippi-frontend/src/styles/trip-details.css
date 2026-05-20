@@ -326,6 +326,58 @@
   border: 1px solid rgba(96, 165, 250, 0.6);
 }
 
+.trip-budget-preview {
+  border-radius: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  background: rgba(15, 27, 45, 0.56);
+  padding: 14px;
+  display: grid;
+  gap: 6px;
+}
+
+.trip-budget-preview p {
+  color: rgba(191, 219, 254, 0.84);
+}
+
+.trip-budget-preview strong {
+  font-size: clamp(24px, 2.4vw, 30px);
+}
+
+.trip-budget-preview--final {
+  border-color: rgba(74, 222, 128, 0.42);
+}
+
+.trip-budget-quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.trip-budget-adjustments {
+  display: grid;
+  gap: 12px;
+}
+
+.trip-budget-adjustments__row {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.trip-budget-adjustments__row .modal-form__row {
+  flex: 1;
+}
+
+.trip-budget-adjustments__remove {
+  min-width: 94px;
+  border-radius: 12px;
+  border: 1px solid rgba(248, 113, 113, 0.54);
+  background: rgba(127, 29, 29, 0.34);
+  color: rgba(254, 226, 226, 0.96);
+  padding: 10px 12px;
+  font-weight: 600;
+}
+
 @media (max-width: 980px) {
   .trip-finance__grid {
     grid-template-columns: repeat(2, minmax(160px, 1fr));
@@ -356,5 +408,10 @@
 
   .trip-finance__grid {
     grid-template-columns: 1fr;
+  }
+
+  .trip-budget-adjustments__row {
+    flex-direction: column;
+    align-items: stretch;
   }
 }

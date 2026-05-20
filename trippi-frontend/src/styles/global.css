@@ -1,4 +1,5 @@
 @import "./variables.css";
+@import "./modal.css";
 
 * {
   margin: 0;
