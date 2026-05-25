@@ -181,6 +181,61 @@
   gap: 16px;
 }
 
+.trip-finance__entries {
+  display: grid;
+  gap: 14px;
+}
+
+.trip-finance__entries-title {
+  font-size: 20px;
+}
+
+.trip-finance__entries-list {
+  display: grid;
+  gap: 10px;
+}
+
+.trip-finance-entry {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(8, 20, 36, 0.92);
+  padding: 16px 18px;
+}
+
+.trip-finance-entry__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(37, 99, 235, 0.18);
+  color: #bfdbfe;
+}
+
+.trip-finance-entry__content {
+  display: grid;
+  gap: 4px;
+}
+
+.trip-finance-entry__content span {
+  color: rgba(226, 232, 240, 0.72);
+}
+
+.trip-finance-entry__amount {
+  font-size: 18px;
+}
+
+.trip-finance__entries-empty {
+  border: 1px dashed rgba(148, 163, 184, 0.4);
+  border-radius: 18px;
+  padding: 18px;
+}
+
 .trip-finance__card {
   position: relative;
   background: linear-gradient(160deg, rgba(16, 35, 58, 0.88), rgba(10, 24, 41, 0.95));
@@ -278,6 +333,23 @@
   gap: 9px;
 }
 
+.trip-activity__amount {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+}
+
+.trip-activity__amount span {
+  display: inline-flex;
+  justify-content: center;
+  min-width: 92px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(37, 99, 235, 0.14);
+  color: #bfdbfe;
+  font-weight: 700;
+}
+
 .trip-activity__title-row {
   display: flex;
   align-items: flex-start;
@@ -285,31 +357,31 @@
   gap: 10px;
 }
 
+.trip-activity__title-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .trip-activity__content h3 {
   font-size: clamp(18px, 2vw, 23px);
+}
+
+.trip-activity__inline-amount {
+  display: inline-flex;
+  justify-content: center;
+  min-width: 92px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(37, 99, 235, 0.14);
+  color: #bfdbfe;
+  font-weight: 700;
 }
 
 .trip-activity__content p {
   color: rgba(226, 232, 240, 0.86);
 }
 
-.trip-activity__meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  font-size: 14px;
-  color: rgba(191, 219, 254, 0.86);
-}
-
-.trip-activity__meta span {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.trip-details-empty {
-  display: grid;
-  gap: 12px;
   max-width: 460px;
 }
 
@@ -402,8 +474,23 @@
     width: 100%;
   }
 
+  .trip-finance-entry {
+    grid-template-columns: 1fr;
+    align-items: flex-start;
+  }
+
   .trip-activity {
     grid-template-columns: 1fr;
+  }
+
+  .trip-activity__title-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .trip-activity__title-actions {
+    width: 100%;
+    justify-content: space-between;
   }
 
   .trip-finance__grid {

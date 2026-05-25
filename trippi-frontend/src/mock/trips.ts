@@ -4,6 +4,7 @@ export interface TripActivity {
   description: string;
   location: string;
   notes: string;
+  amount: number;
 }
 
 export interface TripItineraryDay {
@@ -47,21 +48,24 @@ export const trips: Trip[] = [
             title: "Café no Marais",
             description: "Encontro da equipe para alinhar roteiro e tickets do dia.",
             location: "Le Peloton Cafe",
-            notes: "Chegar 15 min antes para garantir mesa no térreo."
+            notes: "Chegar 15 min antes para garantir mesa no térreo.",
+            amount: 95,
           },
           {
             time: "11:00",
             title: "Museu do Louvre",
             description: "Visita guiada com foco nas alas italiana e egípcia.",
             location: "Rue de Rivoli",
-            notes: "Ingressos digitais já pagos pelo fundo comum."
+            notes: "Ingressos digitais já pagos pelo fundo comum.",
+            amount: 300,
           },
           {
             time: "19:30",
             title: "Jantar de abertura",
             description: "Primeiro jantar oficial da viagem com brinde do grupo.",
             location: "Bistrot Richelieu",
-            notes: "Reserva em nome de Trippi Group."
+            notes: "Reserva em nome de Trippi Group.",
+            amount: 420,
           }
         ]
       },
@@ -73,21 +77,24 @@ export const trips: Trip[] = [
             title: "Tour Montmartre",
             description: "Passeio fotográfico pelas ruas históricas e ateliês.",
             location: "Sacre-Coeur",
-            notes: "Levar casaco leve e bateria extra para câmeras."
+            notes: "Levar casaco leve e bateria extra para câmeras.",
+            amount: 180,
           },
           {
             time: "14:00",
             title: "Picnic no Champ de Mars",
             description: "Pausa para almoço com vista para a Torre Eiffel.",
             location: "Champ de Mars",
-            notes: "Mercado sugerido: Rue Cler."
+            notes: "Mercado sugerido: Rue Cler.",
+            amount: 140,
           },
           {
             time: "21:00",
             title: "Cruzeiro no Sena",
             description: "Passeio noturno com iluminação completa da cidade.",
             location: "Port de la Bourdonnais",
-            notes: "Check-in fecha 20 minutos antes do embarque."
+            notes: "Check-in fecha 20 minutos antes do embarque.",
+            amount: 560,
           }
         ]
       },
@@ -99,14 +106,16 @@ export const trips: Trip[] = [
             title: "Compras na Galeries Lafayette",
             description: "Janela livre para compras e souvenirs.",
             location: "Boulevard Haussmann",
-            notes: "Separar orçamento individual antes de entrar."
+            notes: "Separar orçamento individual antes de entrar.",
+            amount: 0,
           },
           {
             time: "16:00",
             title: "Revisão financeira da viagem",
             description: "Conferência de gastos e fechamento parcial por categoria.",
             location: "Lounge do hotel",
-            notes: "Atualizar comprovantes no app até 15:45."
+            notes: "Atualizar comprovantes no app até 15:45.",
+            amount: 0,
           }
         ]
       }
@@ -132,14 +141,16 @@ export const trips: Trip[] = [
             title: "Chegada e check-in",
             description: "Ajuste de conexão e descanso rápido.",
             location: "Shinjuku",
-            notes: "Ativar eSIM local antes de sair do aeroporto."
+            notes: "Ativar eSIM local antes de sair do aeroporto.",
+            amount: 0,
           },
           {
             time: "18:00",
             title: "Shibuya Sky",
             description: "Sessão de fotos ao pôr do sol e briefing da semana.",
             location: "Shibuya",
-            notes: "Ingressos com horário fixo."
+            notes: "Ingressos com horário fixo.",
+            amount: 260,
           }
         ]
       },
@@ -151,14 +162,16 @@ export const trips: Trip[] = [
             title: "Mercado de Toyosu",
             description: "Experiência gastronômica e compras de snacks.",
             location: "Koto City",
-            notes: "Levar dinheiro para lojas menores."
+            notes: "Levar dinheiro para lojas menores.",
+            amount: 180,
           },
           {
             time: "13:30",
             title: "Asakusa e Senso-ji",
             description: "Roteiro cultural com tempo livre para lojinhas.",
             location: "Taito City",
-            notes: "Evitar horário de pico do metrô na volta."
+            notes: "Evitar horário de pico do metrô na volta.",
+            amount: 220,
           }
         ]
       }
@@ -184,14 +197,16 @@ export const trips: Trip[] = [
             title: "Passeio em Belem",
             description: "Visita aos principais pontos historicos da regiao.",
             location: "Mosteiro dos Jeronimos",
-            notes: "Ingressos reservados com antecedencia."
+            notes: "Ingressos reservados com antecedencia.",
+            amount: 160,
           },
           {
             time: "20:00",
             title: "Noite de fado",
             description: "Jantar com apresentacao tradicional portuguesa.",
             location: "Alfama",
-            notes: "Confirmar restricoes alimentares do grupo."
+            notes: "Confirmar restricoes alimentares do grupo.",
+            amount: 240,
           }
         ]
       }

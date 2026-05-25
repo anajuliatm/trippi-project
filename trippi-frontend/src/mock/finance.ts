@@ -10,10 +10,19 @@ export interface TripDebtSettlement {
   note: string;
 }
 
+export interface TripFinanceEntry {
+  id: string;
+  memberId: string;
+  type: "contribution" | "expense";
+  description: string;
+  amount: number;
+}
+
 export interface TripFinanceRecord {
   tripId: number;
   contributions: TripMemberContribution[];
   settlements: TripDebtSettlement[];
+  entries: TripFinanceEntry[];
 }
 
 export interface AppMember {
@@ -41,6 +50,36 @@ export const tripFinanceRecords: TripFinanceRecord[] = [
       { memberId: "member-noah", amount: 1300 },
       { memberId: "member-joao", amount: 1050 },
     ],
+    entries: [
+      {
+        id: "paris-entry-1",
+        memberId: "member-ana",
+        type: "expense",
+        description: "Museu do Louvre",
+        amount: 300,
+      },
+      {
+        id: "paris-entry-2",
+        memberId: "member-ana",
+        type: "contribution",
+        description: "Ana adicionou ao caixa comum",
+        amount: 500,
+      },
+      {
+        id: "paris-entry-3",
+        memberId: "member-luca",
+        type: "expense",
+        description: "Jantar de abertura",
+        amount: 420,
+      },
+      {
+        id: "paris-entry-4",
+        memberId: "member-duda",
+        type: "contribution",
+        description: "Duda reforcou o saldo da viagem",
+        amount: 350,
+      },
+    ],
     settlements: [
       {
         fromMemberId: "member-luca",
@@ -63,6 +102,29 @@ export const tripFinanceRecords: TripFinanceRecord[] = [
       { memberId: "member-luca", amount: 1500 },
       { memberId: "member-duda", amount: 1300 },
     ],
+    entries: [
+      {
+        id: "tokyo-entry-1",
+        memberId: "member-ana",
+        type: "contribution",
+        description: "Ana adicionou ao fundo inicial",
+        amount: 700,
+      },
+      {
+        id: "tokyo-entry-2",
+        memberId: "member-duda",
+        type: "expense",
+        description: "Shibuya Sky",
+        amount: 260,
+      },
+      {
+        id: "tokyo-entry-3",
+        memberId: "member-luca",
+        type: "expense",
+        description: "Hotel primeira noite",
+        amount: 480,
+      },
+    ],
     settlements: [
       {
         fromMemberId: "member-duda",
@@ -75,6 +137,20 @@ export const tripFinanceRecords: TripFinanceRecord[] = [
         toMemberId: "member-ana",
         amount: 260,
         note: "Hotel primeira noite",
+      },
+    ],
+  },
+  {
+    tripId: 3,
+    contributions: [],
+    settlements: [],
+    entries: [
+      {
+        id: "lisboa-entry-1",
+        memberId: "member-joao",
+        type: "expense",
+        description: "Noite de fado",
+        amount: 240,
       },
     ],
   },

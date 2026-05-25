@@ -127,3 +127,8 @@ atualizei App.tsx com a rota
     - mudanças no css da sidebar para suportar
     - adição no componente comum da sidedar
 
+## 25/05 - Adição do perfil editavel do usuario + Ajustes
+- criei uma pagina para editar perfil do usuario
+    - adicionei e editei os mocks pra simular isso
+- adicionei valor nos itens do roteiro
+    - adicionei os lançamentos na página financeiro da viagem

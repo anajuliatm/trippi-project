@@ -1,10 +1,11 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { CalendarDays, Clock3, MapPin, Pencil, Plus, Trash2, Users } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, CalendarDays, Clock3, MapPin, Pencil, Plus, Trash2, Users } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { BackButton } from "../../components/common/BackButton";
 import { Modal } from "../../components/common/Modal";
 import { MainLayout } from "../../layouts/MainLayout";
+import { getMemberName, tripFinanceRecords } from "../../mock/finance";
 import {
   calculateDaysRemaining,
   getTripById,
@@ -26,6 +27,11 @@ function formatCurrency(value: number) {
     style: "currency",
     currency: "BRL",
   }).format(value);
+}
+
+function formatSignedCurrency(value: number) {
+  const sign = value >= 0 ? "+" : "-";
+  return `${sign}${formatCurrency(Math.abs(value))}`;
 }
 
 function getTripDateRange(startDate: string, endDate: string) {
@@ -56,6 +62,7 @@ interface OverviewFormState {
 interface ItineraryFormState {
   date: string;
   time: string;
+  amount: string;
   title: string;
   description: string;
   location: string;
@@ -180,6 +187,7 @@ function OverviewTab({
 
 function FinanceSummary({ trip, onEditBudget }: { trip: Trip; onEditBudget: () => void }) {
   const remaining = trip.budget - trip.spent;
+  const financeEntries = tripFinanceRecords.find((record) => record.tripId === trip.id)?.entries ?? [];
 
   return (
     <section className="trip-finance">
@@ -206,6 +214,43 @@ function FinanceSummary({ trip, onEditBudget }: { trip: Trip; onEditBudget: () =
           <strong>{formatCurrency(remaining)}</strong>
         </article>
       </div>
+
+      <section className="trip-finance__entries" aria-label="Lancamentos da viagem">
+        <div className="trip-section__header">
+          <h3 className="trip-finance__entries-title">Lancamentos da viagem</h3>
+        </div>
+
+        {financeEntries.length > 0 ? (
+          <div className="trip-finance__entries-list">
+            {financeEntries.map((entry) => {
+              const signedAmount = entry.type === "contribution" ? entry.amount : -entry.amount;
+
+              return (
+                <article key={entry.id} className="trip-finance-entry">
+                  <div className="trip-finance-entry__icon">
+                    {entry.type === "contribution" ? <ArrowUpRight size={16} /> : <ArrowDownLeft size={16} />}
+                  </div>
+
+                  <div className="trip-finance-entry__content">
+                    <strong>{entry.description}</strong>
+                    <span>{getMemberName(entry.memberId)} registrou este lancamento</span>
+                  </div>
+
+                  <strong
+                    className={`trip-finance-entry__amount ${signedAmount >= 0 ? "is-positive" : "is-negative"}`}
+                  >
+                    {formatSignedCurrency(signedAmount)}
+                  </strong>
+                </article>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="trip-finance__entries-empty">
+            <h3>Sem lancamentos para esta viagem.</h3>
+          </div>
+        )}
+      </section>
     </section>
   );
 }
@@ -281,18 +326,21 @@ function ItineraryTabs({
                 <div className="trip-activity__content">
                   <div className="trip-activity__title-row">
                     <h3>{activity.title}</h3>
-                    <ActionButtons
-                      modes={["edit", "delete"]}
-                      onAction={(mode) => {
-                        if (mode === "edit") {
-                          onEdit(activeDate, activityIndex, activity);
-                        }
+                    <div className="trip-activity__title-actions">
+                      <span className="trip-activity__inline-amount">{formatCurrency(activity.amount)}</span>
+                      <ActionButtons
+                        modes={["edit", "delete"]}
+                        onAction={(mode) => {
+                          if (mode === "edit") {
+                            onEdit(activeDate, activityIndex, activity);
+                          }
 
-                        if (mode === "delete") {
-                          onDelete(activeDate, activityIndex);
-                        }
-                      }}
-                    />
+                          if (mode === "delete") {
+                            onDelete(activeDate, activityIndex);
+                          }
+                        }}
+                      />
+                    </div>
                   </div>
                   <p>{activity.description}</p>
 
@@ -356,6 +404,7 @@ export function TripDetailsPage() {
   const [itineraryForm, setItineraryForm] = useState<ItineraryFormState>({
     date: "",
     time: "09:00",
+    amount: "0",
     title: "",
     description: "",
     location: "",
@@ -452,6 +501,7 @@ export function TripDetailsPage() {
     setItineraryForm({
       date: initialDate,
       time: "09:00",
+      amount: "0",
       title: "",
       description: "",
       location: "",
@@ -466,6 +516,7 @@ export function TripDetailsPage() {
     setItineraryForm({
       date,
       time: activity.time,
+      amount: String(activity.amount),
       title: activity.title,
       description: activity.description,
       location: activity.location,
@@ -481,8 +532,10 @@ export function TripDetailsPage() {
       }
 
       const itinerary = previous.itinerary.map((day) => ({ ...day, activities: [...day.activities] }));
+      const parsedAmount = Number(itineraryForm.amount);
       const newActivity: TripActivity = {
         time: itineraryForm.time,
+        amount: Number.isNaN(parsedAmount) ? 0 : Math.max(parsedAmount, 0),
         title: itineraryForm.title,
         description: itineraryForm.description,
         location: itineraryForm.location,
@@ -850,6 +903,20 @@ export function TripDetailsPage() {
                   value={itineraryForm.time}
                   onChange={(event) =>
                     setItineraryForm((previous) => ({ ...previous, time: event.target.value }))
+                  }
+                />
+              </div>
+
+              <div className="modal-form__row">
+                <label htmlFor="itinerary-amount">Valor em R$</label>
+                <input
+                  id="itinerary-amount"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={itineraryForm.amount}
+                  onChange={(event) =>
+                    setItineraryForm((previous) => ({ ...previous, amount: event.target.value }))
                   }
                 />
               </div>
