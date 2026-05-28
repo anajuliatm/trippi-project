@@ -1,0 +1,40 @@
+from sqlalchemy import (
+    Column,
+    String,
+    TIMESTAMP,
+    Numeric,
+    ForeignKey,
+    Text
+)
+
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.sql import func
+
+import uuid
+
+from app.database import Base
+
+class Finance(Base):
+    __tablename__ = "finance"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+    trip_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("trips.id", ondelete="CASCADE"),
+        nullable=False
+    )
+
+    user_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id"),
+        nullable=False
+    )
+
+    type = Column(String(20), nullable=False)
+
+    description = Column(Text)
+
+    amount = Column(Numeric(10, 2), nullable=False)
+
+    created_at = Column(TIMESTAMP, server_default=func.now())

@@ -16,3 +16,6 @@
 - criei as pastas e arquivos do backend para futuro desenvolvimento
 - rodei api pra teste: uvicorn app.main:app --reload
     - tudo ok em http://127.0.0.1:8000/docs
+- criei models e os scripts python dentro
+    - SQLAlchemy: biblioteca da linguagem Python que funciona como um kit de ferramentas SQL e um Object Relational Mapper (ORM). permite interação com bd usando classes e objetos python
+    - SQLAlchemy trabalha com: tabela → classe Python; coluna → atributo.
