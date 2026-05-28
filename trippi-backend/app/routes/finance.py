@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.dependencies import get_db
 from app.models.finance import Finance
 from app.schemas.finance import (
     FinanceCreate,
+    FinanceUpdate,
     FinanceResponse
 )
 
@@ -45,11 +46,11 @@ def get_trip_finance(
 
     return entries
 
-@router.put("/{finance_id}",
+@router.patch("/{finance_id}",
             response_model=FinanceResponse)
 def update_finance(
     finance_id: str,
-    finance_data: FinanceCreate,
+    finance_data: FinanceUpdate,
     db: Session = Depends(get_db)
 ):
 
@@ -65,9 +66,14 @@ def update_finance(
             detail="Lançamento não encontrado"
         )
 
-    finance.type = finance_data.type
-    finance.description = finance_data.description
-    finance.amount = finance_data.amount
+    if finance_data.type is not None:
+        finance.type = finance_data.type
+
+    if finance_data.description is not None:
+        finance.description = finance_data.description
+
+    if finance_data.amount is not None:
+        finance.amount = finance_data.amount
 
     db.commit()
 
