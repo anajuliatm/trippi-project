@@ -47,7 +47,7 @@ def get_trips(db: Session = Depends(get_db)):
 
     return trips
 
-@router.put("/{trip_id}", response_model=TripResponse)
+@router.patch("/{trip_id}", response_model=TripResponse)
 def update_trip(
     trip_id: str,
     trip_data: TripUpdate,
