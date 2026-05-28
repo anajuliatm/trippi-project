@@ -59,3 +59,63 @@ def get_trip_members(
     )
 
     return members
+
+@router.put("/{trip_id}/{user_id}",
+            response_model=TripMemberResponse)
+def update_member(
+    trip_id: str,
+    user_id: str,
+    member_data: TripMemberCreate,
+    db: Session = Depends(get_db)
+):
+
+    member = (
+        db.query(TripMember)
+        .filter(
+            TripMember.trip_id == trip_id,
+            TripMember.user_id == user_id
+        )
+        .first()
+    )
+
+    if not member:
+        raise HTTPException(
+            status_code=404,
+            detail="Membro não encontrado"
+        )
+
+    member.role = member_data.role
+
+    db.commit()
+
+    db.refresh(member)
+
+    return member
+
+@router.delete("/{trip_id}/{user_id}")
+def delete_member(
+    trip_id: str,
+    user_id: str,
+    db: Session = Depends(get_db)
+):
+
+    member = (
+        db.query(TripMember)
+        .filter(
+            TripMember.trip_id == trip_id,
+            TripMember.user_id == user_id
+        )
+        .first()
+    )
+
+    if not member:
+        raise HTTPException(
+            status_code=404,
+            detail="Membro não encontrado"
+        )
+
+    db.delete(member)
+
+    db.commit()
+
+    return {"message": "Membro removido"}

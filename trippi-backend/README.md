@@ -21,7 +21,7 @@
     - SQLAlchemy trabalha com: tabela → classe Python; coluna → atributo.
     - models servem para consultas, insert, update, delete e orm
 
-3. proximos passos, nessa ordem:
+3. get e post: proximos passos, nessa ordem:
     - database session
         - dependencies.py criado: Cria e fecha conexão com o banco de dados automaticamente.
     - schemas
@@ -29,9 +29,10 @@
     - rotas de users
         - ja realiza POST /users e salva usuario no Supabase
         - registrei essa rota no main.py
-    - rotas de trips
+    - rotas de trips, finance, itinerary, payments e trip_members
     - testar Swagger
+
+4. Criação de put e delete pro crud
+
+### Integração com frontend
     - integrar frontend
-    - finance
-    - itinerary
-    - payments

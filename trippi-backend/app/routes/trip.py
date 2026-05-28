@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.dependencies import get_db
@@ -46,3 +46,58 @@ def get_trips(db: Session = Depends(get_db)):
     trips = db.query(Trip).all()
 
     return trips
+
+@router.put("/{trip_id}", response_model=TripResponse)
+def update_trip(
+    trip_id: str,
+    trip_data: TripCreate,
+    db: Session = Depends(get_db)
+):
+
+    trip = (
+        db.query(Trip)
+        .filter(Trip.id == trip_id)
+        .first()
+    )
+
+    if not trip:
+        raise HTTPException(
+            status_code=404,
+            detail="Viagem não encontrada"
+        )
+
+    trip.destination = trip_data.destination
+    trip.image_url = trip_data.image_url
+    trip.departure_date = trip_data.departure_date
+    trip.return_date = trip_data.return_date
+    trip.budget = trip_data.budget
+
+    db.commit()
+
+    db.refresh(trip)
+
+    return trip
+
+@router.delete("/{trip_id}")
+def delete_trip(
+    trip_id: str,
+    db: Session = Depends(get_db)
+):
+
+    trip = (
+        db.query(Trip)
+        .filter(Trip.id == trip_id)
+        .first()
+    )
+
+    if not trip:
+        raise HTTPException(
+            status_code=404,
+            detail="Viagem não encontrada"
+        )
+
+    db.delete(trip)
+
+    db.commit()
+
+    return {"message": "Viagem deletada"}

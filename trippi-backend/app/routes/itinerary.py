@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.dependencies import get_db
@@ -44,3 +44,61 @@ def get_trip_itinerary(
     )
 
     return activities
+
+@router.put("/{activity_id}",
+            response_model=ItineraryResponse)
+def update_activity(
+    activity_id: str,
+    activity_data: ItineraryCreate,
+    db: Session = Depends(get_db)
+):
+
+    activity = (
+        db.query(Itinerary)
+        .filter(Itinerary.id == activity_id)
+        .first()
+    )
+
+    if not activity:
+        raise HTTPException(
+            status_code=404,
+            detail="Atividade não encontrada"
+        )
+
+    activity.title = activity_data.title
+    activity.description = activity_data.description
+    activity.location = activity_data.location
+    activity.activity_date = activity_data.activity_date
+    activity.activity_time = activity_data.activity_time
+    activity.notes = activity_data.notes
+    activity.estimated_cost = activity_data.estimated_cost
+
+    db.commit()
+
+    db.refresh(activity)
+
+    return activity
+
+@router.delete("/{activity_id}")
+def delete_activity(
+    activity_id: str,
+    db: Session = Depends(get_db)
+):
+
+    activity = (
+        db.query(Itinerary)
+        .filter(Itinerary.id == activity_id)
+        .first()
+    )
+
+    if not activity:
+        raise HTTPException(
+            status_code=404,
+            detail="Atividade não encontrada"
+        )
+
+    db.delete(activity)
+
+    db.commit()
+
+    return {"message": "Atividade do roteiro deletada "}

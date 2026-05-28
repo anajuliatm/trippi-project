@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.dependencies import get_db
@@ -44,3 +44,56 @@ def get_trip_payments(
     )
 
     return payments
+
+@router.put("/{payment_id}",
+            response_model=PaymentResponse)
+def update_payment(
+    payment_id: str,
+    payment_data: PaymentCreate,
+    db: Session = Depends(get_db)
+):
+
+    payment = (
+        db.query(Payment)
+        .filter(Payment.id == payment_id)
+        .first()
+    )
+
+    if not payment:
+        raise HTTPException(
+            status_code=404,
+            detail="Pagamento não encontrado"
+        )
+
+    payment.amount = payment_data.amount
+    payment.note = payment_data.note
+
+    db.commit()
+
+    db.refresh(payment)
+
+    return payment
+
+@router.delete("/{payment_id}")
+def delete_payment(
+    payment_id: str,
+    db: Session = Depends(get_db)
+):
+
+    payment = (
+        db.query(Payment)
+        .filter(Payment.id == payment_id)
+        .first()
+    )
+
+    if not payment:
+        raise HTTPException(
+            status_code=404,
+            detail="Pagamento não encontrado"
+        )
+
+    db.delete(payment)
+
+    db.commit()
+
+    return {"message": "Pagamento deletado"}
