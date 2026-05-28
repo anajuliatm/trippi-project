@@ -5,6 +5,7 @@ from app.dependencies import get_db
 from app.models.payment import Payment
 from app.schemas.payment import (
     PaymentCreate,
+    PaymentUpdate,
     PaymentResponse
 )
 
@@ -45,11 +46,11 @@ def get_trip_payments(
 
     return payments
 
-@router.put("/{payment_id}",
+@router.patch("/{payment_id}",
             response_model=PaymentResponse)
 def update_payment(
     payment_id: str,
-    payment_data: PaymentCreate,
+    payment_data: PaymentUpdate,
     db: Session = Depends(get_db)
 ):
 
@@ -65,8 +66,17 @@ def update_payment(
             detail="Pagamento não encontrado"
         )
 
-    payment.amount = payment_data.amount
-    payment.note = payment_data.note
+    if payment_data.amount is not None:
+        payment.amount = payment_data.amount
+
+    if payment_data.note is not None:
+        payment.note = payment_data.note
+
+    if payment_data.status is not None:
+        payment.status = payment_data.status
+
+    if payment_data.settled_at is not None:
+        payment.settled_at = payment_data.settled_at
 
     db.commit()
 
