@@ -19,3 +19,19 @@
 - criei models e os scripts python dentro
     - SQLAlchemy: biblioteca da linguagem Python que funciona como um kit de ferramentas SQL e um Object Relational Mapper (ORM). permite interação com bd usando classes e objetos python
     - SQLAlchemy trabalha com: tabela → classe Python; coluna → atributo.
+    - models servem para consultas, insert, update, delete e orm
+
+3. proximos passos, nessa ordem:
+    - database session
+        - dependencies.py criado: Cria e fecha conexão com o banco de dados automaticamente.
+    - schemas
+        - definem entrada da API, saida da API e validação
+    - rotas de users
+        - ja realiza POST /users e salva usuario no Supabase
+        - registrei essa rota no main.py
+    - rotas de trips
+    - testar Swagger
+    - integrar frontend
+    - finance
+    - itinerary
+    - payments
