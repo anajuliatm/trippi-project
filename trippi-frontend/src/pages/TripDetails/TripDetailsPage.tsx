@@ -343,12 +343,12 @@ function ItineraryTabs({
                     </div>
                   </div>
                   <p>{activity.description}</p>
+                  <span>{activity.notes}</span>
 
                   <div className="trip-activity__meta">
                     <span>
                       <MapPin size={14} /> {activity.location}
                     </span>
-                    <span>{activity.notes}</span>
                   </div>
                 </div>
               </article>
