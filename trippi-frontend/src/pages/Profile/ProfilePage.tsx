@@ -17,21 +17,18 @@ export function ProfilePage() {
     event.preventDefault();
 
     if (!passwordsMatch) {
-      setMessage("As senhas precisam ser iguais para salvar.");
+      setMessage("As senhas precisam ser iguais.");
       return;
     }
 
     updateCurrentUserProfile({ username, email, password });
-    setMessage("Informacoes atualizadas com sucesso.");
+    setMessage("Informações atualizadas com sucesso.");
   }
 
   return (
     <MainLayout>
       <div className="profile-page">
         <section className="profile-hero">
-          <div className="profile-hero__badge">
-            <ShieldCheck size={18} /> Conta ativa
-          </div>
           <h1>Seu perfil</h1>
           <p>Visualize e edite suas informações de acesso.</p>
         </section>
