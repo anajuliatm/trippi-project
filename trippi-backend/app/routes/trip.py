@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.dependencies import get_db
 from app.models.trip import Trip
 from app.schemas.trip import TripCreate, TripResponse
+from app.models.trip_member import TripMember
 
 router = APIRouter(prefix="/trips", tags=["Trips"])
 
@@ -20,6 +21,17 @@ def create_trip(trip: TripCreate, db: Session = Depends(get_db)):
     )
 
     db.add(new_trip)
+
+    db.flush()
+
+    # adiciona owner da viagem como membro da viagem
+    owner_member = TripMember(
+        trip_id=new_trip.id,
+        user_id=trip.owner_id,
+        role="owner"
+    )
+
+    db.add(owner_member)
 
     db.commit()
 
