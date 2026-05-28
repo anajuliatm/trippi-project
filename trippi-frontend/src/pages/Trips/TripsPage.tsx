@@ -34,7 +34,7 @@ function getTodayDate() {
 
 interface NewTripForm {
   destination: string;
-  imageFile: File | null;
+  imageUrl: string;
   departureDate: string;
   endDate: string;
   participants: string[];
@@ -46,7 +46,7 @@ export function TripsPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newTripForm, setNewTripForm] = useState<NewTripForm>({
     destination: "",
-    imageFile: null,
+    imageUrl: "",
     departureDate: getTodayDate(),
     endDate: getTodayDate(),
     participants: [],
@@ -61,7 +61,7 @@ export function TripsPage() {
     setIsAddModalOpen(false);
     setNewTripForm({
       destination: "",
-      imageFile: null,
+      imageUrl: "",
       departureDate: getTodayDate(),
       endDate: getTodayDate(),
       participants: [],
@@ -191,17 +191,29 @@ export function TripsPage() {
             </div>
 
             <div className="modal-form__row">
-              <label htmlFor="trip-image-file">Imagem de capa (PNG/JPG/JPEG)</label>
+              <label htmlFor="trip-image-file">Imagem de capa (URL)</label>
               <input
                 id="trip-image-file"
-                type="file"
-                accept=".png,.jpg,.jpeg,image/png,image/jpeg"
+                type="text"
+                placeholder="Ex.: site.com/imagem.jpg"
+                value={newTripForm.imageUrl}
                 onChange={(event) => {
-                  const file = event.target.files?.[0] ?? null;
-                  setNewTripForm((previous) => ({ ...previous, imageFile: file }));
+                  setNewTripForm((previous) => ({
+                    ...previous,
+                    imageUrl: event.target.value,
+                  }));
                 }}
               />
-              {newTripForm.imageFile ? <small>Arquivo selecionado: {newTripForm.imageFile.name}</small> : null}
+              <div className="trip-preview-container">
+                {newTripForm.imageUrl && (
+                  <img
+                    src={newTripForm.imageUrl}
+                    alt="Preview"
+                    className="trip-preview-image"
+                    width={200}
+                  />
+                )}
+              </div>
             </div>
 
             <div className="modal-inline-fields">
