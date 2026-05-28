@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.dependencies import get_db
 from app.models.trip import Trip
-from app.schemas.trip import TripCreate, TripResponse
+from app.schemas.trip import TripCreate, TripUpdate, TripResponse
 from app.models.trip_member import TripMember
 
 router = APIRouter(prefix="/trips", tags=["Trips"])
@@ -50,7 +50,7 @@ def get_trips(db: Session = Depends(get_db)):
 @router.put("/{trip_id}", response_model=TripResponse)
 def update_trip(
     trip_id: str,
-    trip_data: TripCreate,
+    trip_data: TripUpdate,
     db: Session = Depends(get_db)
 ):
 
@@ -66,11 +66,23 @@ def update_trip(
             detail="Viagem não encontrada"
         )
 
-    trip.destination = trip_data.destination
-    trip.image_url = trip_data.image_url
-    trip.departure_date = trip_data.departure_date
-    trip.return_date = trip_data.return_date
-    trip.budget = trip_data.budget
+    if trip_data.destination is not None:
+        trip.destination = trip_data.destination
+
+    if trip_data.image_url is not None:
+        trip.image_url = trip_data.image_url
+
+    if trip_data.departure_date is not None:
+        trip.departure_date = trip_data.departure_date
+
+    if trip_data.return_date is not None:
+        trip.return_date = trip_data.return_date
+
+    if trip_data.is_active is not None:
+        trip.is_active = trip_data.is_active
+
+    if trip_data.budget is not None:
+        trip.budget = trip_data.budget
 
     db.commit()
 
