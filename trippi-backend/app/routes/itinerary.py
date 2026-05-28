@@ -46,7 +46,7 @@ def get_trip_itinerary(
 
     return activities
 
-@router.put("/{activity_id}",
+@router.patch("/{activity_id}",
             response_model=ItineraryResponse)
 def update_activity(
     activity_id: str,
