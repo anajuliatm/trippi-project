@@ -1,12 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException, Path
+from fastapi import APIRouter, Depends, Path
 from sqlalchemy.orm import Session
 
 from app.dependencies import get_db
-from app.models.trip_member import TripMember
 from app.schemas.trip_member import (
     TripMemberCreate,
     TripMemberResponse
 )
+from app.services import trip_member_service
 
 router = APIRouter(
     prefix="/trip_member",
@@ -25,37 +25,12 @@ def add_member(
     user_id: str = Path(..., description="ID do usuário"),
     db: Session = Depends(get_db)
 ):
-
-    if str(member.trip_id) != trip_id or str(member.user_id) != user_id:
-        raise HTTPException(
-            status_code=400,
-            detail="trip_id ou user_id diferente da rota"
-        )
-
-    existing_member = (
-        db.query(TripMember)
-        .filter(
-            TripMember.trip_id == member.trip_id,
-            TripMember.user_id == member.user_id
-        )
-        .first()
+    return trip_member_service.add_member(
+        db=db,
+        trip_id=trip_id,
+        user_id=user_id,
+        member=member,
     )
-
-    if existing_member:
-        raise HTTPException(
-            status_code=400,
-            detail="Usuário já participa da viagem"
-        )
-
-    new_member = TripMember(**member.model_dump())
-
-    db.add(new_member)
-
-    db.commit()
-
-    db.refresh(new_member)
-
-    return new_member
 
 
 @router.get(
@@ -68,14 +43,7 @@ def get_trip_members(
     trip_id: str = Path(..., description="ID da viagem"),
     db: Session = Depends(get_db)
 ):
-
-    members = (
-        db.query(TripMember)
-        .filter(TripMember.trip_id == trip_id)
-        .all()
-    )
-
-    return members
+    return trip_member_service.list_trip_members(db=db, trip_id=trip_id)
 
 
 @router.delete(
@@ -88,24 +56,8 @@ def delete_member(
     user_id: str = Path(..., description="ID do usuário"),
     db: Session = Depends(get_db)
 ):
-
-    member = (
-        db.query(TripMember)
-        .filter(
-            TripMember.trip_id == trip_id,
-            TripMember.user_id == user_id
-        )
-        .first()
+    return trip_member_service.delete_member(
+        db=db,
+        trip_id=trip_id,
+        user_id=user_id,
     )
-
-    if not member:
-        raise HTTPException(
-            status_code=404,
-            detail="Membro não encontrado"
-        )
-
-    db.delete(member)
-
-    db.commit()
-
-    return {"message": "Membro removido"}

@@ -1,1 +1,1 @@
-from . import finance_service, trip_service
+from . import finance_service, trip_member_service, trip_service

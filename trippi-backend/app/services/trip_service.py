@@ -1,18 +1,16 @@
 from decimal import Decimal
 
 from fastapi import HTTPException, status
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.models.finance import Finance
 from app.models.trip import Trip
 from app.models.trip_member import TripMember
 from app.schemas.finance import TripFinanceSummaryResponse
 from app.schemas.trip import TripCreate, TripUpdate
+from app.services import finance_service
 
-EXPENSE_TYPE = "expense"
-CONTRIBUTION_TYPE = "contribution"
 CENT = Decimal("0.01")
 
 
@@ -106,31 +104,8 @@ def delete_trip(db: Session, trip_id: str) -> dict[str, str]:
 
 
 def get_trip_summary(db: Session, trip_id: str) -> TripFinanceSummaryResponse:
-    trip = _get_trip_or_404(db=db, trip_id=trip_id)
-
-    totals_statement = select(
-        func.coalesce(
-            func.sum(Finance.amount).filter(Finance.type == CONTRIBUTION_TYPE),
-            0,
-        ).label("total_contributions"),
-        func.coalesce(
-            func.sum(Finance.amount).filter(Finance.type == EXPENSE_TYPE),
-            0,
-        ).label("total_expenses"),
-    ).where(Finance.trip_id == trip.id)
-    totals = db.execute(totals_statement).one()
-
-    budget = _to_decimal(trip.budget)
-    total_contributions = _quantize(_to_decimal(totals.total_contributions))
-    total_expenses = _quantize(_to_decimal(totals.total_expenses))
-
-    return TripFinanceSummaryResponse(
-        trip_id=trip.id,
-        budget=_quantize(budget),
-        total_contributions=total_contributions,
-        total_expenses=total_expenses,
-        remaining_balance=_quantize(total_contributions - total_expenses),
-    )
+    _get_trip_or_404(db=db, trip_id=trip_id)
+    return finance_service.get_trip_summary(db=db, trip_id=trip_id)
 
 
 def _get_trip_or_404(db: Session, trip_id: str) -> Trip:

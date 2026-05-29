@@ -40,6 +40,6 @@ class TripParticipantBalanceResponse(BaseModel):
 class TripFinanceSummaryResponse(BaseModel):
     trip_id: UUID
     budget: Decimal
-    total_contributions: Decimal
+    budget_per_person: Decimal
     total_expenses: Decimal
-    remaining_balance: Decimal
+    remaining_budget: Decimal
