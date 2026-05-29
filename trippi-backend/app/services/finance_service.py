@@ -179,6 +179,7 @@ def get_trip_summary(db: Session, trip_id: str | UUID) -> TripFinanceSummaryResp
     snapshot = calculate_trip_financials(db=db, trip_id=trip_id)
     return TripFinanceSummaryResponse(
         trip_id=snapshot.trip.id,
+        participants=len(snapshot.participants),
         budget=snapshot.budget,
         budget_per_person=snapshot.budget_per_person,
         total_expenses=snapshot.total_expenses,
