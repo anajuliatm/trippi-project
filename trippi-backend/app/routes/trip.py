@@ -8,7 +8,12 @@ from app.models.trip_member import TripMember
 
 router = APIRouter(prefix="/trips", tags=["Trips"])
 
-@router.post("/", response_model=TripResponse)
+@router.post(
+    "/",
+    response_model=TripResponse,
+    summary="Criar viagem",
+    description="Cria uma nova viagem."
+)
 def create_trip(trip: TripCreate, db: Session = Depends(get_db)):
 
     new_trip = Trip(
@@ -40,14 +45,47 @@ def create_trip(trip: TripCreate, db: Session = Depends(get_db)):
     return new_trip
 
 
-@router.get("/", response_model=list[TripResponse])
+@router.get(
+    "/",
+    response_model=list[TripResponse],
+    summary="Listar viagens",
+    description="Retorna todas as viagens cadastradas."
+)
 def get_trips(db: Session = Depends(get_db)):
 
     trips = db.query(Trip).all()
 
     return trips
 
-@router.patch("/{trip_id}", response_model=TripResponse)
+
+@router.get(
+    "/{trip_id}",
+    response_model=TripResponse,
+    summary="Buscar viagem",
+    description="Retorna uma viagem pelo identificador."
+)
+def get_trip_by_id(trip_id: str, db: Session = Depends(get_db)):
+
+    trip = (
+        db.query(Trip)
+        .filter(Trip.id == trip_id)
+        .first()
+    )
+
+    if not trip:
+        raise HTTPException(
+            status_code=404,
+            detail="Viagem não encontrada"
+        )
+
+    return trip
+
+@router.patch(
+    "/{trip_id}",
+    response_model=TripResponse,
+    summary="Atualizar viagem",
+    description="Atualiza parcialmente uma viagem existente."
+)
 def update_trip(
     trip_id: str,
     trip_data: TripUpdate,
@@ -90,7 +128,11 @@ def update_trip(
 
     return trip
 
-@router.delete("/{trip_id}")
+@router.delete(
+    "/{trip_id}",
+    summary="Excluir viagem",
+    description="Remove uma viagem pelo identificador."
+)
 def delete_trip(
     trip_id: str,
     db: Session = Depends(get_db)

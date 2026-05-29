@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Path
 from sqlalchemy.orm import Session
 
 from app.dependencies import get_db
@@ -7,7 +7,12 @@ from app.schemas.user import UserCreate, UserUpdate, UserResponse
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
-@router.post("/", response_model=UserResponse)
+@router.post(
+    "/",
+    response_model=UserResponse,
+    summary="Criar usuário",
+    description="Cria um novo usuário."
+)
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
 
     new_user = User(
@@ -24,9 +29,14 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
 
     return new_user
 
-@router.get("/{user_id}", response_model=UserResponse)
+@router.get(
+    "/{user_id}",
+    response_model=UserResponse,
+    summary="Buscar usuário",
+    description="Retorna um usuário pelo identificador."
+)
 def get_user(
-    user_id: str,
+    user_id: str = Path(..., description="ID do usuário"),
     db: Session = Depends(get_db)
 ):
     user = (
@@ -43,10 +53,15 @@ def get_user(
 
     return user
 
-@router.patch("/{user_id}", response_model=UserResponse)
+@router.patch(
+    "/{user_id}",
+    response_model=UserResponse,
+    summary="Atualizar usuário",
+    description="Atualiza parcialmente um usuário existente."
+)
 def update_user(
-    user_id: str,
     user_data: UserUpdate,
+    user_id: str = Path(..., description="ID do usuário"),
     db: Session = Depends(get_db)
 ):
 
@@ -77,9 +92,13 @@ def update_user(
 
     return user
 
-@router.delete("/{user_id}")
+@router.delete(
+    "/{user_id}",
+    summary="Excluir usuário",
+    description="Remove um usuário pelo identificador."
+)
 def delete_user(
-    user_id: str,
+    user_id: str = Path(..., description="ID do usuário"),
     db: Session = Depends(get_db)
 ):
 

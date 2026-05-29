@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Path
 from sqlalchemy.orm import Session
 
 from app.dependencies import get_db
@@ -14,11 +14,23 @@ router = APIRouter(
     tags=["Itinerary"]
 )
 
-@router.post("/", response_model=ItineraryResponse)
+@router.post(
+    "/trip/{trip_id}",
+    response_model=ItineraryResponse,
+    summary="Criar atividade",
+    description="Cria uma nova atividade vinculada a uma viagem."
+)
 def create_activity(
     activity: ItineraryCreate,
+    trip_id: str = Path(..., description="ID da viagem"),
     db: Session = Depends(get_db)
 ):
+
+    if str(activity.trip_id) != trip_id:
+        raise HTTPException(
+            status_code=400,
+            detail="trip_id diferente da rota"
+        )
 
     new_activity = Itinerary(**activity.model_dump())
 
@@ -31,10 +43,14 @@ def create_activity(
     return new_activity
 
 
-@router.get("/trip/{trip_id}",
-            response_model=list[ItineraryResponse])
+@router.get(
+    "/trip/{trip_id}",
+    response_model=list[ItineraryResponse],
+    summary="Listar atividades",
+    description="Retorna as atividades de uma viagem."
+)
 def get_trip_itinerary(
-    trip_id: str,
+    trip_id: str = Path(..., description="ID da viagem"),
     db: Session = Depends(get_db)
 ):
 
@@ -46,24 +62,61 @@ def get_trip_itinerary(
 
     return activities
 
-@router.patch("/{activity_id}",
-            response_model=ItineraryResponse)
-def update_activity(
-    activity_id: str,
-    activity_data: ItineraryUpdate,
+
+@router.get(
+    "/trip/{trip_id}/activity/{activity_id}",
+    response_model=ItineraryResponse,
+    summary="Buscar atividade",
+    description="Retorna uma atividade específica de uma viagem."
+)
+def get_activity_by_trip_and_id(
+    trip_id: str = Path(..., description="ID da viagem"),
+    activity_id: str = Path(..., description="ID da atividade"),
     db: Session = Depends(get_db)
 ):
-
     activity = (
         db.query(Itinerary)
-        .filter(Itinerary.id == activity_id)
+        .filter(
+            Itinerary.id == activity_id,
+            Itinerary.trip_id == trip_id
+        )
         .first()
     )
 
     if not activity:
         raise HTTPException(
             status_code=404,
-            detail="Atividade não encontrada"
+            detail="Atividade não encontrada para esta viagem"
+        )
+
+    return activity
+
+@router.patch(
+    "/trip/{trip_id}/activity/{activity_id}",
+    response_model=ItineraryResponse,
+    summary="Atualizar atividade",
+    description="Atualiza parcialmente uma atividade de uma viagem."
+)
+def update_activity(
+    activity_data: ItineraryUpdate,
+    trip_id: str = Path(..., description="ID da viagem"),
+    activity_id: str = Path(..., description="ID da atividade"),
+    db: Session = Depends(get_db)
+):
+
+    activity = (
+        db.query(Itinerary)
+        .filter(
+            Itinerary.id == activity_id,
+            Itinerary.trip_id == trip_id
+        )
+        .first()
+    )
+
+    if not activity:
+        raise HTTPException(
+            status_code=404,
+            detail="Atividade não encontrada para esta viagem"
         )
 
     if activity_data.title is not None:
@@ -93,15 +146,23 @@ def update_activity(
 
     return activity
 
-@router.delete("/{activity_id}")
+@router.delete(
+    "/trip/{trip_id}/activity/{activity_id}",
+    summary="Excluir atividade",
+    description="Remove uma atividade de uma viagem."
+)
 def delete_activity(
-    activity_id: str,
+    trip_id: str = Path(..., description="ID da viagem"),
+    activity_id: str = Path(..., description="ID da atividade"),
     db: Session = Depends(get_db)
 ):
 
     activity = (
         db.query(Itinerary)
-        .filter(Itinerary.id == activity_id)
+        .filter(
+            Itinerary.id == activity_id,
+            Itinerary.trip_id == trip_id
+        )
         .first()
     )
 

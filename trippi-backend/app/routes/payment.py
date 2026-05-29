@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Path
 from sqlalchemy.orm import Session
 
 from app.dependencies import get_db
@@ -14,7 +14,12 @@ router = APIRouter(
     tags=["Payments"]
 )
 
-@router.post("/", response_model=PaymentResponse)
+@router.post(
+    "/",
+    response_model=PaymentResponse,
+    summary="Criar pagamento",
+    description="Cria um novo pagamento."
+)
 def create_payment(
     payment: PaymentCreate,
     db: Session = Depends(get_db)
@@ -31,10 +36,14 @@ def create_payment(
     return new_payment
 
 
-@router.get("/trip/{trip_id}",
-            response_model=list[PaymentResponse])
+@router.get(
+    "/trip/{trip_id}",
+    response_model=list[PaymentResponse],
+    summary="Listar pagamentos da viagem",
+    description="Retorna os pagamentos vinculados a uma viagem."
+)
 def get_trip_payments(
-    trip_id: str,
+    trip_id: str = Path(..., description="ID da viagem"),
     db: Session = Depends(get_db)
 ):
 
@@ -46,11 +55,15 @@ def get_trip_payments(
 
     return payments
 
-@router.patch("/{payment_id}",
-            response_model=PaymentResponse)
+@router.patch(
+    "/{payment_id}",
+    response_model=PaymentResponse,
+    summary="Atualizar pagamento",
+    description="Atualiza parcialmente um pagamento existente."
+)
 def update_payment(
-    payment_id: str,
     payment_data: PaymentUpdate,
+    payment_id: str = Path(..., description="ID do pagamento"),
     db: Session = Depends(get_db)
 ):
 
@@ -84,9 +97,13 @@ def update_payment(
 
     return payment
 
-@router.delete("/{payment_id}")
+@router.delete(
+    "/{payment_id}",
+    summary="Excluir pagamento",
+    description="Remove um pagamento pelo identificador."
+)
 def delete_payment(
-    payment_id: str,
+    payment_id: str = Path(..., description="ID do pagamento"),
     db: Session = Depends(get_db)
 ):
 
