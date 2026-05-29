@@ -27,3 +27,19 @@ class FinanceResponse(FinanceCreate):
 
     class Config:
         from_attributes = True
+
+
+class TripParticipantBalanceResponse(BaseModel):
+    user_id: UUID
+    username: str
+    paid: Decimal
+    should_pay: Decimal
+    balance: Decimal
+
+
+class TripFinanceSummaryResponse(BaseModel):
+    trip_id: UUID
+    budget: Decimal
+    total_contributions: Decimal
+    total_expenses: Decimal
+    remaining_balance: Decimal

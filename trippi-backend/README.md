@@ -34,5 +34,25 @@
 
 4. Criação de put e delete pro crud
 
+## 29/05 - Refat das rotas da API + Regras de Negócio
+1. arrumei as rotas para manterem um padrao intuitivo
+- ex: DELETE /finance/trip/{trip_id}/user/{user_id}/entry/{finance_id} - Fica mais intuitivo de saber que esta deletando uma entrada financeira de um usuario x na viagem y
+
+2. comecei a desenvolver as regras de negócio
+- finance_service.py:
+    - centraliza a regra de negócio financeira
+    - a criação do lançamento em finance_service valida a viagem, garante transação única
+    - para type = expense, gera os payments automaticamente em finance_service, ignorando o pagador e evitando duplicidade via nota interna do lançamento
+    - sincronização desses payments em atualização e remoção do lançamento em finance_service.py:77 e finance_service.py:124
+    - endpoint de saldo individual ficou em finance_service.py:143, usando agregações SQLAlchemy para somar despesas por usuário e calcular paid, should_pay e balance.
+- trip_service.py: 
+    - concentra a lógica de viagens
+    - o resumo financeiro pedido está em trip_service.py:110, retornando budget, total_contributions, total_expenses e remaining_balance
+    - movi o CRUD de viagens para esse service para manter a rota mais curta.
+- em finance.py adicionei os schemas de resposta
+- sem regra de negócio nas rotas
+- novos endpoints GET /trips/{trip_id}/summary e GET /trips/{trip_id}/balances
+
+---
 ### Integração com frontend
     - integrar frontend

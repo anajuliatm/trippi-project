@@ -1,10 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.dependencies import get_db
-from app.models.trip import Trip
+from app.schemas.finance import (
+    TripFinanceSummaryResponse,
+    TripParticipantBalanceResponse,
+)
 from app.schemas.trip import TripCreate, TripUpdate, TripResponse
-from app.models.trip_member import TripMember
+from app.services import finance_service, trip_service
 
 router = APIRouter(prefix="/trips", tags=["Trips"])
 
@@ -15,34 +18,7 @@ router = APIRouter(prefix="/trips", tags=["Trips"])
     description="Cria uma nova viagem."
 )
 def create_trip(trip: TripCreate, db: Session = Depends(get_db)):
-
-    new_trip = Trip(
-        owner_id=trip.owner_id,
-        destination=trip.destination,
-        image_url=trip.image_url,
-        departure_date=trip.departure_date,
-        return_date=trip.return_date,
-        budget=trip.budget
-    )
-
-    db.add(new_trip)
-
-    db.flush()
-
-    # adiciona owner da viagem como membro da viagem
-    owner_member = TripMember(
-        trip_id=new_trip.id,
-        user_id=trip.owner_id,
-        role="owner"
-    )
-
-    db.add(owner_member)
-
-    db.commit()
-
-    db.refresh(new_trip)
-
-    return new_trip
+    return trip_service.create_trip(db=db, trip_data=trip)
 
 
 @router.get(
@@ -52,10 +28,7 @@ def create_trip(trip: TripCreate, db: Session = Depends(get_db)):
     description="Retorna todas as viagens cadastradas."
 )
 def get_trips(db: Session = Depends(get_db)):
-
-    trips = db.query(Trip).all()
-
-    return trips
+    return trip_service.list_trips(db=db)
 
 
 @router.get(
@@ -65,20 +38,27 @@ def get_trips(db: Session = Depends(get_db)):
     description="Retorna uma viagem pelo identificador."
 )
 def get_trip_by_id(trip_id: str, db: Session = Depends(get_db)):
+    return trip_service.get_trip_by_id(db=db, trip_id=trip_id)
 
-    trip = (
-        db.query(Trip)
-        .filter(Trip.id == trip_id)
-        .first()
-    )
 
-    if not trip:
-        raise HTTPException(
-            status_code=404,
-            detail="Viagem não encontrada"
-        )
+@router.get(
+    "/{trip_id}/summary",
+    response_model=TripFinanceSummaryResponse,
+    summary="Resumo financeiro da viagem",
+    description="Retorna orçamento, contribuições, despesas e saldo restante da viagem."
+)
+def get_trip_summary(trip_id: str, db: Session = Depends(get_db)):
+    return trip_service.get_trip_summary(db=db, trip_id=trip_id)
 
-    return trip
+
+@router.get(
+    "/{trip_id}/balances",
+    response_model=list[TripParticipantBalanceResponse],
+    summary="Saldos dos participantes",
+    description="Retorna quanto cada participante pagou, deveria pagar e seu saldo final."
+)
+def get_trip_balances(trip_id: str, db: Session = Depends(get_db)):
+    return finance_service.get_trip_balances(db=db, trip_id=trip_id)
 
 @router.patch(
     "/{trip_id}",
@@ -91,42 +71,11 @@ def update_trip(
     trip_data: TripUpdate,
     db: Session = Depends(get_db)
 ):
-
-    trip = (
-        db.query(Trip)
-        .filter(Trip.id == trip_id)
-        .first()
+    return trip_service.update_trip(
+        db=db,
+        trip_id=trip_id,
+        trip_data=trip_data,
     )
-
-    if not trip:
-        raise HTTPException(
-            status_code=404,
-            detail="Viagem não encontrada"
-        )
-
-    if trip_data.destination is not None:
-        trip.destination = trip_data.destination
-
-    if trip_data.image_url is not None:
-        trip.image_url = trip_data.image_url
-
-    if trip_data.departure_date is not None:
-        trip.departure_date = trip_data.departure_date
-
-    if trip_data.return_date is not None:
-        trip.return_date = trip_data.return_date
-
-    if trip_data.is_active is not None:
-        trip.is_active = trip_data.is_active
-
-    if trip_data.budget is not None:
-        trip.budget = trip_data.budget
-
-    db.commit()
-
-    db.refresh(trip)
-
-    return trip
 
 @router.delete(
     "/{trip_id}",
@@ -137,21 +86,4 @@ def delete_trip(
     trip_id: str,
     db: Session = Depends(get_db)
 ):
-
-    trip = (
-        db.query(Trip)
-        .filter(Trip.id == trip_id)
-        .first()
-    )
-
-    if not trip:
-        raise HTTPException(
-            status_code=404,
-            detail="Viagem não encontrada"
-        )
-
-    db.delete(trip)
-
-    db.commit()
-
-    return {"message": "Viagem deletada"}
+    return trip_service.delete_trip(db=db, trip_id=trip_id)
