@@ -46,21 +46,37 @@ def create_trip(db: Session, trip_data: TripCreate) -> Trip:
     return new_trip
 
 
-def list_trips(db: Session) -> list[Trip]:
-    statement = select(Trip).order_by(Trip.created_at.desc())
+def list_trips(db: Session, user_id: str) -> list[Trip]:
+    statement = (
+        select(Trip)
+        .join(TripMember, TripMember.trip_id == Trip.id)
+        .where(TripMember.user_id == user_id)
+        .order_by(Trip.departure_date.asc(), Trip.created_at.desc())
+    )
     return list(db.execute(statement).scalars().all())
 
 
-def get_trip_by_id(db: Session, trip_id: str) -> Trip:
-    return _get_trip_or_404(db=db, trip_id=trip_id)
+def get_trip_by_id(db: Session, trip_id: str, user_id: str) -> Trip:
+    return _get_trip_or_404_for_user(db=db, trip_id=trip_id, user_id=user_id)
 
 
-def update_trip(db: Session, trip_id: str, trip_data: TripUpdate) -> Trip:
+def update_trip(
+    db: Session,
+    trip_id: str,
+    trip_data: TripUpdate,
+    user_id: str,
+) -> Trip:
     trip: Trip | None = None
 
     try:
         with db.begin():
-            trip = _get_trip_or_404(db=db, trip_id=trip_id)
+            trip = _get_trip_or_404_for_user(db=db, trip_id=trip_id, user_id=user_id)
+
+            if str(trip.owner_id) != user_id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Apenas o dono da viagem pode atualiza-la",
+                )
 
             if trip_data.destination is not None:
                 trip.destination = trip_data.destination
@@ -88,24 +104,39 @@ def update_trip(db: Session, trip_id: str, trip_data: TripUpdate) -> Trip:
     if trip is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Viagem não encontrada",
+            detail="Viagem nao encontrada",
         )
 
     db.refresh(trip)
     return trip
 
 
-def delete_trip(db: Session, trip_id: str) -> dict[str, str]:
+def delete_trip(db: Session, trip_id: str, user_id: str) -> dict[str, str]:
     with db.begin():
-        trip = _get_trip_or_404(db=db, trip_id=trip_id)
+        trip = _get_trip_or_404_for_user(db=db, trip_id=trip_id, user_id=user_id)
+
+        if str(trip.owner_id) != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Apenas o dono da viagem pode exclui-la",
+            )
+
         db.delete(trip)
 
     return {"message": "Viagem deletada"}
 
 
-def get_trip_summary(db: Session, trip_id: str) -> TripFinanceSummaryResponse:
-    _get_trip_or_404(db=db, trip_id=trip_id)
+def get_trip_summary(
+    db: Session,
+    trip_id: str,
+    user_id: str,
+) -> TripFinanceSummaryResponse:
+    _get_trip_or_404_for_user(db=db, trip_id=trip_id, user_id=user_id)
     return finance_service.get_trip_summary(db=db, trip_id=trip_id)
+
+
+def ensure_trip_access(db: Session, trip_id: str, user_id: str) -> Trip:
+    return _get_trip_or_404_for_user(db=db, trip_id=trip_id, user_id=user_id)
 
 
 def _get_trip_or_404(db: Session, trip_id: str) -> Trip:
@@ -114,7 +145,27 @@ def _get_trip_or_404(db: Session, trip_id: str) -> Trip:
     if trip is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Viagem não encontrada",
+            detail="Viagem nao encontrada",
+        )
+
+    return trip
+
+
+def _get_trip_or_404_for_user(db: Session, trip_id: str, user_id: str) -> Trip:
+    statement = (
+        select(Trip)
+        .join(TripMember, TripMember.trip_id == Trip.id)
+        .where(
+            Trip.id == trip_id,
+            TripMember.user_id == user_id,
+        )
+    )
+    trip = db.execute(statement).scalar_one_or_none()
+
+    if trip is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Viagem nao encontrada",
         )
 
     return trip
