@@ -1,9 +1,16 @@
 import { LayoutDashboard, Wallet, Plane, LogOut, UserRound } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 import "../../styles/sidebar.css";
 
 export function Sidebar() {
   const navigate = useNavigate();
+  const { logout } = useAuth();
+
+  function handleLogout() {
+    logout();
+    navigate("/", { replace: true });
+  }
 
   return (
     <aside className="sidebar">
@@ -22,7 +29,7 @@ export function Sidebar() {
         <button
           type="button"
           className="menu-item menu-item--logout"
-          onClick={() => navigate("/")}
+          onClick={handleLogout}
         >
           <LogOut />
           <span>Logout</span>
