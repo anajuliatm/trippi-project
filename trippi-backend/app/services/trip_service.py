@@ -31,12 +31,13 @@ def create_trip(db: Session, trip_data: TripCreate) -> Trip:
     )
 
     try:
-        with db.begin():
-            db.add(new_trip)
-            db.flush()
-            owner_member.trip_id = new_trip.id
-            db.add(owner_member)
+        db.add(new_trip)
+        db.flush()
+        owner_member.trip_id = new_trip.id
+        db.add(owner_member)
+        db.commit()
     except IntegrityError as exc:
+        db.rollback()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Nao foi possivel criar a viagem",
@@ -69,33 +70,35 @@ def update_trip(
     trip: Trip | None = None
 
     try:
-        with db.begin():
-            trip = _get_trip_or_404_for_user(db=db, trip_id=trip_id, user_id=user_id)
+        trip = _get_trip_or_404_for_user(db=db, trip_id=trip_id, user_id=user_id)
 
-            if str(trip.owner_id) != user_id:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Apenas o dono da viagem pode atualiza-la",
-                )
+        if str(trip.owner_id) != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Apenas o dono da viagem pode atualiza-la",
+            )
 
-            if trip_data.destination is not None:
-                trip.destination = trip_data.destination
+        if trip_data.destination is not None:
+            trip.destination = trip_data.destination
 
-            if trip_data.image_url is not None:
-                trip.image_url = trip_data.image_url
+        if trip_data.image_url is not None:
+            trip.image_url = trip_data.image_url
 
-            if trip_data.departure_date is not None:
-                trip.departure_date = trip_data.departure_date
+        if trip_data.departure_date is not None:
+            trip.departure_date = trip_data.departure_date
 
-            if trip_data.return_date is not None:
-                trip.return_date = trip_data.return_date
+        if trip_data.return_date is not None:
+            trip.return_date = trip_data.return_date
 
-            if trip_data.is_active is not None:
-                trip.is_active = trip_data.is_active
+        if trip_data.is_active is not None:
+            trip.is_active = trip_data.is_active
 
-            if trip_data.budget is not None:
-                trip.budget = Decimal(str(trip_data.budget)).quantize(CENT)
+        if trip_data.budget is not None:
+            trip.budget = Decimal(str(trip_data.budget)).quantize(CENT)
+
+        db.commit()
     except IntegrityError as exc:
+        db.rollback()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Nao foi possivel atualizar a viagem",
@@ -112,7 +115,7 @@ def update_trip(
 
 
 def delete_trip(db: Session, trip_id: str, user_id: str) -> dict[str, str]:
-    with db.begin():
+    try:
         trip = _get_trip_or_404_for_user(db=db, trip_id=trip_id, user_id=user_id)
 
         if str(trip.owner_id) != user_id:
@@ -122,6 +125,13 @@ def delete_trip(db: Session, trip_id: str, user_id: str) -> dict[str, str]:
             )
 
         db.delete(trip)
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Nao foi possivel excluir a viagem",
+        ) from exc
 
     return {"message": "Viagem deletada"}
 

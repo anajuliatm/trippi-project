@@ -1,10 +1,17 @@
 import { motion } from "framer-motion";
 import { CalendarDays, Plus, Trash2, Users } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Modal } from "../../components/common/Modal";
+import { useAuth } from "../../contexts/AuthContext";
 import { MainLayout } from "../../layouts/MainLayout";
-import { trips, type TripStatus } from "../../mock/trips";
+import { addTripMemberRequest } from "../../services/memberService";
+import {
+  createTripRequest,
+  getDashboardTripsRequest,
+  type DashboardTrip,
+  type TripStatus,
+} from "../../services/tripService";
 import "../../styles/trips-page.css";
 
 const TAB_OPTIONS: { label: string; value: TripStatus }[] = [
@@ -41,9 +48,13 @@ interface NewTripForm {
 }
 
 export function TripsPage() {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TripStatus>("active");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [trips, setTrips] = useState<DashboardTrip[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [newTripForm, setNewTripForm] = useState<NewTripForm>({
     destination: "",
     imageUrl: "",
@@ -53,12 +64,32 @@ export function TripsPage() {
   });
   const [newParticipantName, setNewParticipantName] = useState("");
 
+  useEffect(() => {
+    async function loadTrips() {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await getDashboardTripsRequest();
+        setTrips(data);
+      } catch (loadError) {
+        setError(
+          loadError instanceof Error
+            ? loadError.message
+            : "Nao foi possivel carregar as viagens.",
+        );
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    void loadTrips();
+  }, []);
+
   const filteredTrips = useMemo(() => {
     return trips.filter((trip) => trip.status === activeTab);
-  }, [activeTab]);
+  }, [activeTab, trips]);
 
-  function handleSaveNewTrip() {
-    setIsAddModalOpen(false);
+  function resetNewTripForm() {
     setNewTripForm({
       destination: "",
       imageUrl: "",
@@ -67,6 +98,86 @@ export function TripsPage() {
       participants: [],
     });
     setNewParticipantName("");
+  }
+
+  async function loadTrips() {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getDashboardTripsRequest();
+      setTrips(data);
+    } catch (loadError) {
+      setError(
+        loadError instanceof Error
+          ? loadError.message
+          : "Nao foi possivel carregar as viagens.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSaveNewTrip() {
+    if (!user) {
+      setError("Sessao invalida. Faca login novamente.");
+      return;
+    }
+
+    if (!newTripForm.destination.trim()) {
+      setError("Informe o destino da viagem.");
+      return;
+    }
+
+    try {
+      setError(null);
+
+      const createdTrip = await createTripRequest({
+        owner_id: user.id,
+        destination: newTripForm.destination.trim(),
+        image_url: newTripForm.imageUrl.trim() || null,
+        departure_date: newTripForm.departureDate,
+        return_date: newTripForm.endDate,
+        budget: 0,
+      });
+
+      const participantIds = Array.from(
+        new Set(
+          newTripForm.participants
+            .map((participant) => participant.trim())
+            .filter((participant) => participant && participant !== user.id),
+        ),
+      );
+
+      const participantResults = await Promise.allSettled(
+        participantIds.map((participantId) =>
+          addTripMemberRequest(createdTrip.id, participantId, {
+            trip_id: createdTrip.id,
+            user_id: participantId,
+            role: "member",
+          }),
+        ),
+      );
+
+      const failedParticipants = participantResults.filter(
+        (result) => result.status === "rejected",
+      );
+
+      if (failedParticipants.length > 0) {
+        setError(
+          "Viagem criada, mas um ou mais participantes nao puderam ser adicionados. Confirme se os IDs informados existem.",
+        );
+      }
+
+      setIsAddModalOpen(false);
+      resetNewTripForm();
+      await loadTrips();
+    } catch (saveError) {
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : "Nao foi possivel criar a viagem.",
+      );
+    }
   }
 
   function handleAddParticipant() {
@@ -115,7 +226,16 @@ export function TripsPage() {
           <span>Adicionar viagem</span>
         </button>
 
-        {filteredTrips.length > 0 ? (
+        {loading ? <section className="trips-empty"><h2>Carregando viagens...</h2></section> : null}
+
+        {!loading && error ? (
+          <section className="trips-empty">
+            <h2>Nao foi possivel carregar os dados.</h2>
+            <p>{error}</p>
+          </section>
+        ) : null}
+
+        {!loading && !error && filteredTrips.length > 0 ? (
           <section className="trips-grid">
             {filteredTrips.map((trip, index) => (
               <motion.button
@@ -151,11 +271,13 @@ export function TripsPage() {
               </motion.button>
             ))}
           </section>
-        ) : (
+        ) : null}
+
+        {!loading && !error && filteredTrips.length === 0 ? (
           <section className="trips-empty">
             <h2>Nenhuma viagem cadastrada.</h2>
           </section>
-        )}
+        ) : null}
 
         <Modal
           open={isAddModalOpen}
@@ -279,7 +401,7 @@ export function TripsPage() {
                   <input
                     id="trip-participant-name"
                     type="text"
-                    placeholder="Nome do usuario"
+                    placeholder="ID do usuario"
                     value={newParticipantName}
                     onChange={(event) => setNewParticipantName(event.target.value)}
                   />

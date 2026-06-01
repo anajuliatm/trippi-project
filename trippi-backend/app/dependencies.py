@@ -5,6 +5,7 @@ from uuid import UUID
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
+from sqlalchemy.exc import OperationalError
 
 from app.core.security import ALGORITHM, SECRET_KEY
 from app.database import SessionLocal
@@ -17,6 +18,17 @@ def get_db():
 
     try:
         yield db
+
+    except OperationalError as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Banco de dados temporariamente indisponivel",
+        ) from exc
+
+    except Exception:
+        db.rollback()
+        raise
 
     finally:
         db.close()

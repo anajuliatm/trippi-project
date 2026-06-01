@@ -5,13 +5,31 @@ import { useNavigate, useParams } from "react-router-dom";
 import { BackButton } from "../../components/common/BackButton";
 import { Modal } from "../../components/common/Modal";
 import { MainLayout } from "../../layouts/MainLayout";
-import { getMemberName, tripFinanceRecords } from "../../mock/finance";
 import {
   calculateDaysRemaining,
-  getTripById,
-  type Trip,
-  type TripActivity,
-} from "../../mock/trips";
+  deleteTripRequest,
+  getTripByIdRequest,
+  getTripSummaryRequest,
+  updateTripRequest,
+} from "../../services/tripService";
+import {
+  createItineraryEntryRequest,
+  deleteItineraryEntryRequest,
+  getTripItineraryRequest,
+  updateItineraryEntryRequest,
+  type ItineraryEntry,
+} from "../../services/itineraryService";
+import {
+  getTripFinancesRequest,
+  type FinanceEntry,
+} from "../../services/financeService";
+import {
+  addTripMemberRequest,
+  deleteTripMemberRequest,
+  getTripMembersRequest,
+  type TripMember,
+} from "../../services/memberService";
+import { getUserByIdRequest, getUsersMapRequest } from "../../services/userService";
 import "../../styles/trip-details.css";
 
 function formatDate(date: string) {
@@ -70,13 +88,56 @@ interface ItineraryFormState {
 }
 
 interface EditingActivityRef {
+  activityId: string;
   date: string;
-  index: number;
 }
 
-function createParticipantUsers(participantsCount: number) {
-  return Array.from({ length: participantsCount }, (_, index) => `Usuario ${index + 1}`);
+interface TripActivity {
+  id: string;
+  time: string;
+  title: string;
+  description: string;
+  location: string;
+  notes: string;
+  amount: number;
 }
+
+interface TripItineraryDay {
+  date: string;
+  activities: TripActivity[];
+}
+
+interface TripParticipant {
+  userId: string;
+  name: string;
+  role: string;
+}
+
+interface TripFinanceViewEntry {
+  id: string;
+  userId: string;
+  username: string;
+  type: string;
+  description: string;
+  amount: number;
+}
+
+interface TripDetailsData {
+  id: string;
+  destination: string;
+  image: string;
+  participants: number;
+  departureDate: string;
+  endDate: string;
+  budget: number;
+  spent: number;
+  itinerary: TripItineraryDay[];
+  memberDetails: TripParticipant[];
+  financeEntries: TripFinanceViewEntry[];
+}
+
+const DEFAULT_TRIP_IMAGE =
+  "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1200&q=80";
 
 const TAB_LABELS: Record<DetailTab, string> = {
   overview: "Overview",
@@ -128,7 +189,7 @@ function OverviewTab({
   onEdit,
   onDelete,
 }: {
-  trip: Trip;
+  trip: TripDetailsData;
   daysRemaining: number;
   onEdit: () => void;
   onDelete: () => void;
@@ -185,9 +246,15 @@ function OverviewTab({
   );
 }
 
-function FinanceSummary({ trip, onEditBudget }: { trip: Trip; onEditBudget: () => void }) {
+function FinanceSummary({
+  trip,
+  onEditBudget,
+}: {
+  trip: TripDetailsData;
+  onEditBudget: () => void;
+}) {
   const remaining = trip.budget - trip.spent;
-  const financeEntries = tripFinanceRecords.find((record) => record.tripId === trip.id)?.entries ?? [];
+  const financeEntries = trip.financeEntries;
 
   return (
     <section className="trip-finance">
@@ -223,17 +290,17 @@ function FinanceSummary({ trip, onEditBudget }: { trip: Trip; onEditBudget: () =
         {financeEntries.length > 0 ? (
           <div className="trip-finance__entries-list">
             {financeEntries.map((entry) => {
-              const signedAmount = entry.type === "contribution" ? entry.amount : -entry.amount;
+              const signedAmount = entry.type === "expense" ? -entry.amount : entry.amount;
 
               return (
                 <article key={entry.id} className="trip-finance-entry">
                   <div className="trip-finance-entry__icon">
-                    {entry.type === "contribution" ? <ArrowUpRight size={16} /> : <ArrowDownLeft size={16} />}
+                    {entry.type === "expense" ? <ArrowDownLeft size={16} /> : <ArrowUpRight size={16} />}
                   </div>
 
                   <div className="trip-finance-entry__content">
                     <strong>{entry.description}</strong>
-                    <span>{getMemberName(entry.memberId)} registrou este lancamento</span>
+                    <span>{entry.username} registrou este lancamento</span>
                   </div>
 
                   <strong
@@ -262,11 +329,11 @@ function ItineraryTabs({
   onEdit,
   onDelete,
 }: {
-  trip: Trip;
+  trip: TripDetailsData;
   onAdd: () => void;
   onAddForDate: (date: string) => void;
-  onEdit: (date: string, index: number, activity: TripActivity) => void;
-  onDelete: (date: string, index: number) => void;
+  onEdit: (date: string, activity: TripActivity) => void;
+  onDelete: (activityId: string, date: string) => void;
 }) {
   const itineraryDates = useMemo(
     () => getTripDateRange(trip.departureDate, trip.endDate),
@@ -317,7 +384,7 @@ function ItineraryTabs({
         >
           {activeDay && activeDay.activities.length > 0 ? (
             activeDay.activities.map((activity, activityIndex) => (
-              <article key={`${activeDate}-${activity.time}-${activity.title}`} className="trip-activity">
+              <article key={activity.id} className="trip-activity">
                 <div className="trip-activity__time">
                   <Clock3 size={16} />
                   <span>{activity.time}</span>
@@ -332,11 +399,11 @@ function ItineraryTabs({
                         modes={["edit", "delete"]}
                         onAction={(mode) => {
                           if (mode === "edit") {
-                            onEdit(activeDate, activityIndex, activity);
+                            onEdit(activeDate, activity);
                           }
 
                           if (mode === "delete") {
-                            onDelete(activeDate, activityIndex);
+                            onDelete(activity.id, activeDate);
                           }
                         }}
                       />
@@ -373,18 +440,11 @@ function ItineraryTabs({
 export function TripDetailsPage() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const tripId = Number(id);
+  const tripId = id ?? "";
   const [activeTab, setActiveTab] = useState<DetailTab>("overview");
-
-  const trip = useMemo(() => {
-    if (Number.isNaN(tripId)) {
-      return undefined;
-    }
-
-    return getTripById(tripId);
-  }, [tripId]);
-
-  const [tripData, setTripData] = useState<Trip | null>(trip ?? null);
+  const [tripData, setTripData] = useState<TripDetailsData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isOverviewEditOpen, setIsOverviewEditOpen] = useState(false);
   const [isTripDeleteOpen, setIsTripDeleteOpen] = useState(false);
   const [isBudgetEditOpen, setIsBudgetEditOpen] = useState(false);
@@ -396,7 +456,7 @@ export function TripDetailsPage() {
     endDate: "",
   });
 
-  const [participantsUsers, setParticipantsUsers] = useState<string[]>([]);
+  const [participantsUsers, setParticipantsUsers] = useState<TripParticipant[]>([]);
   const [participantInput, setParticipantInput] = useState("");
   const [budgetDraftValue, setBudgetDraftValue] = useState("0");
 
@@ -414,17 +474,64 @@ export function TripDetailsPage() {
   const [pendingDeleteRef, setPendingDeleteRef] = useState<EditingActivityRef | null>(null);
 
   useEffect(() => {
-    setTripData(trip ?? null);
-  }, [trip]);
-
-  useEffect(() => {
-    if (!trip) {
+    if (!tripData) {
       setParticipantsUsers([]);
       return;
     }
 
-    setParticipantsUsers(createParticipantUsers(trip.participants));
-  }, [trip]);
+    setParticipantsUsers(tripData.memberDetails);
+  }, [tripData]);
+
+  useEffect(() => {
+    async function loadTripDetails() {
+      if (!tripId) {
+        setTripData(null);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        const [trip, summary, members, finances, itinerary] = await Promise.all([
+          getTripByIdRequest(tripId),
+          getTripSummaryRequest(tripId),
+          getTripMembersRequest(tripId),
+          getTripFinancesRequest(tripId),
+          getTripItineraryRequest(tripId),
+        ]);
+
+        const userMap = await getUsersMapRequest([
+          ...members.map((member) => member.user_id),
+          ...finances.map((finance) => finance.user_id),
+          trip.owner_id,
+        ]);
+
+        setTripData(
+          buildTripDetailsData({
+            trip,
+            summary,
+            members,
+            finances,
+            itinerary,
+            userMap,
+          }),
+        );
+      } catch (loadError) {
+        setError(
+          loadError instanceof Error
+            ? loadError.message
+            : "Nao foi possivel carregar a viagem.",
+        );
+        setTripData(null);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    void loadTripDetails();
+  }, [tripId]);
 
   const itineraryDates = useMemo(() => {
     if (!tripData) {
@@ -448,25 +555,109 @@ export function TripDetailsPage() {
       departureDate: tripData.departureDate,
       endDate: tripData.endDate,
     });
+    setParticipantsUsers(tripData.memberDetails);
     setParticipantInput("");
     setIsOverviewEditOpen(true);
   }
 
-  function handleSaveOverview() {
-    setTripData((previous) => {
-      if (!previous) {
-        return previous;
+  async function reloadTripDetails() {
+    if (!tripId) {
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const [trip, summary, members, finances, itinerary] = await Promise.all([
+        getTripByIdRequest(tripId),
+        getTripSummaryRequest(tripId),
+        getTripMembersRequest(tripId),
+        getTripFinancesRequest(tripId),
+        getTripItineraryRequest(tripId),
+      ]);
+
+      const userMap = await getUsersMapRequest([
+        ...members.map((member) => member.user_id),
+        ...finances.map((finance) => finance.user_id),
+        trip.owner_id,
+      ]);
+
+      setTripData(
+        buildTripDetailsData({
+          trip,
+          summary,
+          members,
+          finances,
+          itinerary,
+          userMap,
+        }),
+      );
+      setError(null);
+    } catch (reloadError) {
+      setError(
+        reloadError instanceof Error
+          ? reloadError.message
+          : "Nao foi possivel atualizar a tela da viagem.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSaveOverview() {
+    if (!tripData) {
+      return;
+    }
+
+    try {
+      setError(null);
+
+      const shouldUpdateTrip =
+        overviewForm.departureDate !== tripData.departureDate ||
+        overviewForm.endDate !== tripData.endDate;
+
+      if (shouldUpdateTrip) {
+        await updateTripRequest(tripData.id, {
+          departure_date: overviewForm.departureDate,
+          return_date: overviewForm.endDate,
+        });
       }
 
-      return {
-        ...previous,
-        departureDate: overviewForm.departureDate,
-        endDate: overviewForm.endDate,
-        participants: participantsUsers.length,
-      };
-    });
+      const currentIds = new Set(tripData.memberDetails.map((participant) => participant.userId));
+      const nextIds = new Set(participantsUsers.map((participant) => participant.userId));
 
-    setIsOverviewEditOpen(false);
+      const membersToAdd = participantsUsers.filter(
+        (participant) => !currentIds.has(participant.userId),
+      );
+      const membersToRemove = tripData.memberDetails.filter(
+        (participant) => !nextIds.has(participant.userId) && participant.role !== "owner",
+      );
+
+      await Promise.all(
+        membersToAdd.map((participant) =>
+          addTripMemberRequest(tripData.id, participant.userId, {
+            trip_id: tripData.id,
+            user_id: participant.userId,
+            role: "member",
+          }),
+        ),
+      );
+
+      await Promise.all(
+        membersToRemove.map((participant) =>
+          deleteTripMemberRequest(tripData.id, participant.userId),
+        ),
+      );
+
+      setIsOverviewEditOpen(false);
+      await reloadTripDetails();
+    } catch (saveError) {
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : "Nao foi possivel atualizar os dados da viagem.",
+      );
+    }
   }
 
   function openBudgetModal() {
@@ -478,19 +669,23 @@ export function TripDetailsPage() {
     setIsBudgetEditOpen(true);
   }
 
-  function handleSaveBudget() {
-    setTripData((previous) => {
-      if (!previous) {
-        return previous;
-      }
+  async function handleSaveBudget() {
+    if (!tripData) {
+      return;
+    }
 
-      return {
-        ...previous,
-        budget: budgetPreview,
-      };
-    });
-
-    setIsBudgetEditOpen(false);
+    try {
+      setError(null);
+      await updateTripRequest(tripData.id, { budget: budgetPreview });
+      setTripData((previous) => (previous ? { ...previous, budget: budgetPreview } : previous));
+      setIsBudgetEditOpen(false);
+    } catch (saveError) {
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : "Nao foi possivel atualizar o orcamento.",
+      );
+    }
   }
 
   function openAddItineraryModal(date?: string) {
@@ -510,9 +705,9 @@ export function TripDetailsPage() {
     setIsItineraryModalOpen(true);
   }
 
-  function openEditItineraryModal(date: string, index: number, activity: TripActivity) {
+  function openEditItineraryModal(date: string, activity: TripActivity) {
     setItineraryMode("edit");
-    setEditingActivityRef({ date, index });
+    setEditingActivityRef({ activityId: activity.id, date });
     setItineraryForm({
       date,
       time: activity.time,
@@ -525,82 +720,131 @@ export function TripDetailsPage() {
     setIsItineraryModalOpen(true);
   }
 
-  function handleSaveItineraryItem() {
-    setTripData((previous) => {
-      if (!previous) {
-        return previous;
-      }
-
-      const itinerary = previous.itinerary.map((day) => ({ ...day, activities: [...day.activities] }));
-      const parsedAmount = Number(itineraryForm.amount);
-      const newActivity: TripActivity = {
-        time: itineraryForm.time,
-        amount: Number.isNaN(parsedAmount) ? 0 : Math.max(parsedAmount, 0),
-        title: itineraryForm.title,
-        description: itineraryForm.description,
-        location: itineraryForm.location,
-        notes: itineraryForm.notes,
-      };
-
-      if (itineraryMode === "edit" && editingActivityRef) {
-        const oldDayIndex = itinerary.findIndex((day) => day.date === editingActivityRef.date);
-
-        if (oldDayIndex >= 0) {
-          itinerary[oldDayIndex].activities.splice(editingActivityRef.index, 1);
-        }
-      }
-
-      let targetDayIndex = itinerary.findIndex((day) => day.date === itineraryForm.date);
-
-      if (targetDayIndex < 0) {
-        itinerary.push({ date: itineraryForm.date, activities: [] });
-        itinerary.sort((first, second) => first.date.localeCompare(second.date));
-        targetDayIndex = itinerary.findIndex((day) => day.date === itineraryForm.date);
-      }
-
-      itinerary[targetDayIndex].activities.push(newActivity);
-
-      return {
-        ...previous,
-        itinerary,
-      };
-    });
-
-    setIsItineraryModalOpen(false);
-  }
-
-  function openItineraryDeleteModal(date: string, index: number) {
-    setPendingDeleteRef({ date, index });
-    setIsItineraryDeleteOpen(true);
-  }
-
-  function handleDeleteItineraryItem() {
-    if (!pendingDeleteRef) {
+  async function handleSaveItineraryItem() {
+    if (!tripData) {
       return;
     }
 
-    setTripData((previous) => {
-      if (!previous) {
-        return previous;
+    const parsedAmount = Number(itineraryForm.amount);
+    const payload = {
+      trip_id: tripData.id,
+      title: itineraryForm.title,
+      description: itineraryForm.description || null,
+      location: itineraryForm.location || null,
+      activity_date: itineraryForm.date,
+      activity_time: itineraryForm.time || null,
+      notes: itineraryForm.notes || null,
+      estimated_cost: Number.isNaN(parsedAmount) ? 0 : Math.max(parsedAmount, 0),
+    };
+
+    try {
+      setError(null);
+
+      if (itineraryMode === "edit" && editingActivityRef) {
+        await updateItineraryEntryRequest(
+          tripData.id,
+          editingActivityRef.activityId,
+          payload,
+        );
+      } else {
+        await createItineraryEntryRequest(tripData.id, payload);
       }
 
-      const itinerary = previous.itinerary.map((day) => ({ ...day, activities: [...day.activities] }));
-      const dayIndex = itinerary.findIndex((day) => day.date === pendingDeleteRef.date);
+      setIsItineraryModalOpen(false);
+      await reloadTripDetails();
+    } catch (saveError) {
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : "Nao foi possivel salvar o item do roteiro.",
+      );
+    }
+  }
 
-      if (dayIndex < 0) {
-        return previous;
-      }
+  function openItineraryDeleteModal(activityId: string, date: string) {
+    setPendingDeleteRef({ activityId, date });
+    setIsItineraryDeleteOpen(true);
+  }
 
-      itinerary[dayIndex].activities.splice(pendingDeleteRef.index, 1);
+  async function handleDeleteItineraryItem() {
+    if (!pendingDeleteRef || !tripData) {
+      return;
+    }
 
-      return {
+    try {
+      setError(null);
+      await deleteItineraryEntryRequest(tripData.id, pendingDeleteRef.activityId);
+      setPendingDeleteRef(null);
+      setIsItineraryDeleteOpen(false);
+      await reloadTripDetails();
+    } catch (deleteError) {
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : "Nao foi possivel excluir o item do roteiro.",
+      );
+    }
+  }
+
+  async function handleAddParticipant() {
+    const trimmedParticipantId = participantInput.trim();
+
+    if (!trimmedParticipantId) {
+      return;
+    }
+
+    if (participantsUsers.some((participant) => participant.userId === trimmedParticipantId)) {
+      setParticipantInput("");
+      return;
+    }
+
+    try {
+      const user = await getUserByIdRequest(trimmedParticipantId);
+
+      setParticipantsUsers((previous) => [
         ...previous,
-        itinerary,
-      };
-    });
+        {
+          userId: user.id,
+          name: user.username,
+          role: "member",
+        },
+      ]);
+      setParticipantInput("");
+    } catch (participantError) {
+      setError(
+        participantError instanceof Error
+          ? participantError.message
+          : "Nao foi possivel adicionar o participante.",
+      );
+    }
+  }
 
-    setPendingDeleteRef(null);
-    setIsItineraryDeleteOpen(false);
+  async function handleDeleteTrip() {
+    if (!tripData) {
+      return;
+    }
+
+    try {
+      setError(null);
+      await deleteTripRequest(tripData.id);
+      navigate("/trips");
+    } catch (deleteError) {
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : "Nao foi possivel excluir a viagem.",
+      );
+    }
+  }
+
+  if (loading) {
+    return (
+      <MainLayout>
+        <div className="trip-details-empty">
+          <h1>Carregando viagem...</h1>
+        </div>
+      </MainLayout>
+    );
   }
 
   if (!tripData) {
@@ -608,7 +852,7 @@ export function TripDetailsPage() {
       <MainLayout>
         <div className="trip-details-empty">
           <h1>Viagem nao encontrada</h1>
-          <p>Confira o link e selecione uma viagem valida no dashboard.</p>
+          <p>{error ?? "Confira o link e selecione uma viagem valida no dashboard."}</p>
           <BackButton className="trip-details-empty__link" />
         </div>
       </MainLayout>
@@ -620,6 +864,12 @@ export function TripDetailsPage() {
   return (
     <MainLayout>
       <div className="trip-details-page">
+        {error ? (
+          <div className="trip-details-empty">
+            <p>{error}</p>
+          </div>
+        ) : null}
+
         <div className="trip-details__topbar">
           <BackButton className="trip-hero__back-link" />
 
@@ -717,19 +967,24 @@ export function TripDetailsPage() {
                 <div className="trip-participants-editor__list">
                   {participantsUsers.length > 0 ? (
                     participantsUsers.map((participant, index) => (
-                      <span key={`${participant}-${index}`} className="trip-participant-chip">
-                        {participant}
-                        <button
-                          type="button"
-                          aria-label={`Excluir participante ${participant}`}
-                          onClick={() =>
-                            setParticipantsUsers((previous) =>
-                              previous.filter((_, participantIndex) => participantIndex !== index)
-                            )
-                          }
-                        >
-                          <Trash2 size={14} />
-                        </button>
+                      <span key={`${participant.userId}-${index}`} className="trip-participant-chip">
+                        {participant.name}
+                        {participant.role === "owner" ? " (owner)" : ""}
+                        {participant.role !== "owner" ? (
+                          <button
+                            type="button"
+                            aria-label={`Excluir participante ${participant.name}`}
+                            onClick={() =>
+                              setParticipantsUsers((previous) =>
+                                previous.filter(
+                                  (_, participantIndex) => participantIndex !== index,
+                                )
+                              )
+                            }
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        ) : null}
                       </span>
                     ))
                   ) : (
@@ -741,24 +996,11 @@ export function TripDetailsPage() {
                   <input
                     id="overview-participant-input"
                     type="text"
-                    placeholder="Nome do usuario"
+                    placeholder="ID do usuario"
                     value={participantInput}
                     onChange={(event) => setParticipantInput(event.target.value)}
                   />
-                  <button
-                    type="button"
-                    className="modal-btn"
-                    onClick={() => {
-                      const trimmedParticipant = participantInput.trim();
-
-                      if (!trimmedParticipant) {
-                        return;
-                      }
-
-                      setParticipantsUsers((previous) => [...previous, trimmedParticipant]);
-                      setParticipantInput("");
-                    }}
-                  >
+                  <button type="button" className="modal-btn" onClick={() => void handleAddParticipant()}>
                     Adicionar
                   </button>
                 </div>
@@ -781,11 +1023,7 @@ export function TripDetailsPage() {
               <button
                 type="button"
                 className="modal-btn modal-btn--danger"
-                onClick={() => {
-                  setIsTripDeleteOpen(false);
-                  setTripData(null);
-                  navigate("/trips");
-                }}
+                onClick={() => void handleDeleteTrip()}
               >
                 Excluir
               </button>
@@ -1003,4 +1241,97 @@ export function TripDetailsPage() {
       </div>
     </MainLayout>
   );
+}
+
+function normalizeActivityTime(value: string | null) {
+  if (!value) {
+    return "00:00";
+  }
+
+  return value.slice(0, 5);
+}
+
+function groupItineraryByDate(entries: ItineraryEntry[]): TripItineraryDay[] {
+  const grouped = entries.reduce<Record<string, TripActivity[]>>((accumulator, entry) => {
+    const activity: TripActivity = {
+      id: entry.id,
+      time: normalizeActivityTime(entry.activity_time),
+      amount: Number(entry.estimated_cost),
+      title: entry.title,
+      description: entry.description ?? "",
+      location: entry.location ?? "",
+      notes: entry.notes ?? "",
+    };
+
+    if (!accumulator[entry.activity_date]) {
+      accumulator[entry.activity_date] = [];
+    }
+
+    accumulator[entry.activity_date].push(activity);
+    return accumulator;
+  }, {});
+
+  return Object.entries(grouped)
+    .sort(([leftDate], [rightDate]) => leftDate.localeCompare(rightDate))
+    .map(([date, activities]) => ({
+      date,
+      activities: activities.sort((left, right) => left.time.localeCompare(right.time)),
+    }));
+}
+
+function mapMembers(
+  members: TripMember[],
+  userMap: Record<string, { username: string }>,
+): TripParticipant[] {
+  return members.map((member) => ({
+    userId: member.user_id,
+    name: userMap[member.user_id]?.username ?? member.user_id,
+    role: member.role,
+  }));
+}
+
+function mapFinances(
+  finances: FinanceEntry[],
+  userMap: Record<string, { username: string }>,
+): TripFinanceViewEntry[] {
+  return finances.map((finance) => ({
+    id: finance.id,
+    userId: finance.user_id,
+    username: userMap[finance.user_id]?.username ?? finance.user_id,
+    type: finance.type,
+    description: finance.description ?? "Lancamento sem descricao",
+    amount: Number(finance.amount),
+  }));
+}
+
+function buildTripDetailsData({
+  trip,
+  summary,
+  members,
+  finances,
+  itinerary,
+  userMap,
+}: {
+  trip: Awaited<ReturnType<typeof getTripByIdRequest>>;
+  summary: Awaited<ReturnType<typeof getTripSummaryRequest>>;
+  members: TripMember[];
+  finances: FinanceEntry[];
+  itinerary: ItineraryEntry[];
+  userMap: Record<string, { username: string }>;
+}): TripDetailsData {
+  const memberDetails = mapMembers(members, userMap);
+
+  return {
+    id: trip.id,
+    destination: trip.destination,
+    image: trip.image_url ?? DEFAULT_TRIP_IMAGE,
+    participants: Math.max(memberDetails.length, Number(summary.participants ?? 0), 1),
+    departureDate: trip.departure_date,
+    endDate: trip.return_date,
+    budget: Number(trip.budget),
+    spent: Number(summary.total_expenses),
+    itinerary: groupItineraryByDate(itinerary),
+    memberDetails,
+    financeEntries: mapFinances(finances, userMap),
+  };
 }
