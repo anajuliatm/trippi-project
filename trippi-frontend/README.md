@@ -132,3 +132,11 @@ atualizei App.tsx com a rota
     - adicionei e editei os mocks pra simular isso
 - adicionei valor nos itens do roteiro
     - adicionei os lançamentos na página financeiro da viagem
+
+## 01/06 - Inicio da integração com o back
+
+1. criação da camada de API no frontend
+- criação dos tipos de autenticação no frontend em src/types/auth.ts
+- criação do cliente HTTP central em src/services/api.ts com axios
+- criação do serviço de autenticação em src/services/authService.ts
+- criação de um env no frontend 

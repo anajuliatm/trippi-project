@@ -63,6 +63,8 @@
 - a rota user passa a salvar senha com hash, nao mais em texto puro
 
 
+
+
 ---
 ### Integração com frontend
     - integrar frontend
