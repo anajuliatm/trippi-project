@@ -140,3 +140,10 @@ atualizei App.tsx com a rota
 - criação do cliente HTTP central em src/services/api.ts com axios
 - criação do serviço de autenticação em src/services/authService.ts
 - criação de um env no frontend 
+- criacao do contexto de autenticacao em src/contexts/AuthContext
+
+2. Em App.tsx - Aplicação com provider
+- importei o contexto de autenticação
+- criei proteção de rotas privadas em /routes/ProtectedRoute.tsx
+    - pra isso, atualizei AppRoutes.tsx
+- conectei a tela de login a autenticação

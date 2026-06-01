@@ -1,19 +1,46 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Navigate, Link, useNavigate } from "react-router-dom";
 import { LockKeyhole, Mail, User } from "lucide-react";
+import { useAuth } from "../../contexts/AuthContext";
 import "../../styles/login-page.css";
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const { login, register, isAuthenticated } = useAuth();
+
   const [mode, setMode] = useState<"login" | "register">("login");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    navigate("/dashboard");
+    setError("");
+    setIsSubmitting(true);
+
+    try {
+      if (mode === "login") {
+        await login({ email, password });
+      } else {
+        await register({ username, email, password });
+      }
+
+      navigate("/dashboard", { replace: true });
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Não foi possível autenticar.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -98,19 +125,16 @@ export function LoginPage() {
             </div>
           </label>
 
-          {mode === "login" && (
-            <div className="login-form__meta">
-              <label>
-                <input type="checkbox" name="remember" />
-                <span>Manter conectado</span>
-              </label>
+          {error && <p className="login-form__error">{error}</p>}
 
-              <Link to="/dashboard">Entrar sem autenticar</Link>
-            </div>
-          )}
-
-          <button type="submit" className="login-form__submit">
-            <span>{mode === "login" ? "Entrar" : "Criar conta"}</span>
+          <button type="submit" className="login-form__submit" disabled={isSubmitting}>
+            <span>
+              {isSubmitting
+                ? "Processando..."
+                : mode === "login"
+                  ? "Entrar"
+                  : "Criar conta"}
+            </span>
           </button>
         </form>
       </section>
