@@ -10,10 +10,33 @@ import type {
 
 function parseApiError(error: unknown): never {
   if (axios.isAxiosError(error)) {
+    if (!error.response) {
+      throw new Error(
+        "Nao foi possivel conectar ao backend. Verifique se a API esta rodando e se o CORS esta liberado.",
+      );
+    }
+
     const detail = error.response?.data?.detail;
 
     if (typeof detail === "string") {
       throw new Error(detail);
+    }
+
+    if (Array.isArray(detail)) {
+      const message = detail
+        .map((item) => {
+          if (typeof item?.msg === "string") {
+            return item.msg;
+          }
+
+          return null;
+        })
+        .filter((item): item is string => Boolean(item))
+        .join(" ");
+
+      if (message) {
+        throw new Error(message);
+      }
     }
   }
 

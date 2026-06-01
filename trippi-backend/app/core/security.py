@@ -5,7 +5,10 @@ from typing import Any
 from jose import jwt
 from passlib.context import CryptContext
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(
+    schemes=["pbkdf2_sha256", "bcrypt_sha256", "bcrypt"],
+    deprecated="auto",
+)
 
 SECRET_KEY = os.getenv("JWT_SECRET_KEY", "troque-esta-chave-em-producao")
 ALGORITHM = "HS256"
