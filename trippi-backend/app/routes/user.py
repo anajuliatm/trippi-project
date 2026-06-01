@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Path
 from sqlalchemy.orm import Session
-
+from sqlalchemy import or_
+from app.core.security import hash_password
 from app.dependencies import get_db
 from app.models.user import User
 from app.schemas.user import UserCreate, UserUpdate, UserResponse
@@ -14,11 +15,25 @@ router = APIRouter(prefix="/users", tags=["Users"])
     description="Cria um novo usuário."
 )
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
+    existing_user = (
+        db.query(User)
+        .filter(
+            or_(
+                User.email == user.email,
+                User.username == user.username,
+            )
+        )
+        .first()
+    )
+
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email ou username já cadastrados")
+
 
     new_user = User(
         username=user.username,
         email=user.email,
-        password=user.password
+        password=hash_password(user.password)
     )
 
     db.add(new_user)
@@ -84,7 +99,7 @@ def update_user(
         user.email = user_data.email
 
     if user_data.password is not None:
-        user.password = user_data.password
+        user.password = hash_password(user_data.password)
 
     db.commit()
 

@@ -53,6 +53,16 @@
 - sem regra de negócio nas rotas
 - novos endpoints GET /trips/{trip_id}/summary e GET /trips/{trip_id}/balances
 
+## 01/06 - Autenticação
+1. autenticação com JWT
+- add passlib[bcrypt] e python-jose[cryptography] nos requirements
+- criação de um utilitario de segurança no backend core/security.py
+- criação de um schema para autenticação: auth.py
+- att dependencies.py: validação do token e usuário atual
+- criação do router de autenticação e dps registei em main a rota
+- a rota user passa a salvar senha com hash, nao mais em texto puro
+
+
 ---
 ### Integração com frontend
     - integrar frontend
