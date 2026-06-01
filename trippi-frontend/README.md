@@ -147,3 +147,4 @@ atualizei App.tsx com a rota
 - criei proteção de rotas privadas em /routes/ProtectedRoute.tsx
     - pra isso, atualizei AppRoutes.tsx
 - conectei a tela de login a autenticação
+- ativei o logout para funcionar

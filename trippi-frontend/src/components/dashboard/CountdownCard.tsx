@@ -14,7 +14,7 @@ export function CountdownCard({ destination, days }: Props) {
 
       <div className="countdown__counter">
         <span className="countdown__days">{days}</span>
-        <p>Dias restantes</p>
+        <p>Dias restantes.</p>
       </div>
     </div>
   );
