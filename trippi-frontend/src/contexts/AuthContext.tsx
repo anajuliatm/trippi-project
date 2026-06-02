@@ -28,6 +28,7 @@ type AuthContextValue = {
   login: (payload: LoginPayload) => Promise<void>;
   register: (payload: RegisterPayload) => Promise<void>;
   logout: () => void;
+  refreshUser: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -69,8 +70,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    bootstrap();
+    void bootstrap();
   }, []);
+
+  async function refreshUser() {
+    const me = await getMeRequest();
+    setUser(me);
+  }
 
   async function login(payload: LoginPayload) {
     const data = await loginRequest(payload);
@@ -103,6 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       register,
       logout,
+      refreshUser,
     }),
     [loading, token, user],
   );

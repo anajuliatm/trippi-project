@@ -59,7 +59,8 @@ def get_trip_summary(trip_id: str, current_user: User = Depends(get_current_user
     description="Retorna quanto cada participante pagou, deveria pagar e seu saldo final."
 )
 def get_trip_balances(trip_id: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    return finance_service.get_trip_balances(db=db, trip_id=trip_id, user_id=str(current_user.id))
+    trip_service.ensure_trip_access(db=db, trip_id=trip_id, user_id=str(current_user.id))
+    return finance_service.get_trip_balances(db=db, trip_id=trip_id)
 
 @router.patch(
     "/{trip_id}",

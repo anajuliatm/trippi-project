@@ -1,28 +1,100 @@
 import { ShieldCheck, LockKeyhole, Mail, Save, UserRound } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
+import { useAuth } from "../../contexts/AuthContext";
 import { MainLayout } from "../../layouts/MainLayout";
-import { getCurrentUserProfile, updateCurrentUserProfile } from "../../mock/user";
+import { updateUserRequest } from "../../services/userService";
 import "../../styles/profile-page.css";
 
 export function ProfilePage() {
-  const storedProfile = getCurrentUserProfile();
-  const [username, setUsername] = useState(storedProfile.username);
-  const [email, setEmail] = useState(storedProfile.email);
-  const [password, setPassword] = useState(storedProfile.password);
-  const [confirmPassword, setConfirmPassword] = useState(storedProfile.password);
+  const { user, refreshUser } = useAuth();
+
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
-  const passwordsMatch = password === confirmPassword;
+  const [messageType, setMessageType] = useState<"success" | "error" | null>(null);
+  const [saving, setSaving] = useState(false);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    if (!passwordsMatch) {
-      setMessage("As senhas precisam ser iguais.");
+  useEffect(() => {
+    if (!user) {
       return;
     }
 
-    updateCurrentUserProfile({ username, email, password });
-    setMessage("Informações atualizadas com sucesso.");
+    setUsername(user.username);
+    setEmail(user.email);
+    setPassword("");
+    setConfirmPassword("");
+    setMessage("");
+    setMessageType(null);
+  }, [user]);
+
+  const passwordsMatch = password === confirmPassword;
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!user) {
+      setMessage("Sessao invalida. Faca login novamente.");
+      setMessageType("error");
+      return;
+    }
+
+    if (!passwordsMatch) {
+      setMessage("As senhas precisam ser iguais.");
+      setMessageType("error");
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setMessage("");
+      setMessageType(null);
+
+      const payload: {
+        username: string;
+        email: string;
+        password?: string;
+      } = {
+        username: username.trim(),
+        email: email.trim(),
+      };
+
+      if (password.trim()) {
+        payload.password = password;
+      }
+
+      await updateUserRequest(user.id, payload);
+      await refreshUser();
+
+      setPassword("");
+      setConfirmPassword("");
+      setMessage("Informacoes atualizadas com sucesso.");
+      setMessageType("success");
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Nao foi possivel atualizar o perfil.",
+      );
+      setMessageType("error");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (!user) {
+    return (
+      <MainLayout>
+        <div className="profile-page">
+          <section className="profile-form-card">
+            <div className="profile-form-card__header">
+              <h2>Carregando perfil...</h2>
+            </div>
+          </section>
+        </div>
+      </MainLayout>
+    );
   }
 
   return (
@@ -42,7 +114,7 @@ export function ProfilePage() {
             <span>{email}</span>
             <div className="profile-summary-card__meta">
               <p>Senha</p>
-              <strong>{"*".repeat(Math.max(password.length, 8))}</strong>
+              <strong>********</strong>
             </div>
           </aside>
 
@@ -75,40 +147,40 @@ export function ProfilePage() {
 
               <div className="profile-form__row">
                 <label className="profile-form__field">
-                  <span>Senha</span>
+                  <span>Nova senha</span>
                   <div className="profile-form__input-wrapper">
                     <LockKeyhole size={18} />
                     <input
                       type="password"
                       value={password}
                       onChange={(event) => setPassword(event.target.value)}
-                      required
+                      placeholder="********"
                     />
                   </div>
                 </label>
 
                 <label className="profile-form__field">
-                  <span>Confirmar senha</span>
+                  <span>Confirmar nova senha</span>
                   <div className="profile-form__input-wrapper">
                     <LockKeyhole size={18} />
                     <input
                       type="password"
                       value={confirmPassword}
                       onChange={(event) => setConfirmPassword(event.target.value)}
-                      required
+                      placeholder="********"
                     />
                   </div>
                 </label>
               </div>
 
               {message ? (
-                <p className={`profile-form__message ${passwordsMatch ? "is-success" : "is-error"}`}>
+                <p className={`profile-form__message ${messageType === "success" ? "is-success" : "is-error"}`}>
                   {message}
                 </p>
               ) : null}
 
-              <button type="submit" className="profile-form__submit">
-                <Save size={16} /> Salvar alterações
+              <button type="submit" className="profile-form__submit" disabled={saving}>
+                <Save size={16} /> {saving ? "Salvando..." : "Salvar alteracoes"}
               </button>
             </form>
           </section>

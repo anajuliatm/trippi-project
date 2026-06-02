@@ -7,12 +7,30 @@ export type AppUser = {
   created_at: string;
 };
 
+export type UpdateUserPayload = Partial<{
+  username: string;
+  email: string;
+  password: string;
+}>;
+
 export async function getUserByIdRequest(userId: string): Promise<AppUser> {
   try {
     const { data } = await api.get<AppUser>(`/users/${userId}`);
     return data;
   } catch (error) {
     parseApiError(error, "Nao foi possivel carregar os dados do usuario.");
+  }
+}
+
+export async function updateUserRequest(
+  userId: string,
+  payload: UpdateUserPayload,
+): Promise<AppUser> {
+  try {
+    const { data } = await api.patch<AppUser>(`/users/${userId}`, payload);
+    return data;
+  } catch (error) {
+    parseApiError(error, "Nao foi possivel atualizar os dados do usuario.");
   }
 }
 

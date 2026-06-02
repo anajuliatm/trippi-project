@@ -1,8 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, Path
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, HTTPException, Path, status
 from sqlalchemy import or_
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
+
 from app.core.security import hash_password
-from app.dependencies import get_db
+from app.dependencies import get_current_user, get_db
 from app.models.user import User
 from app.schemas.user import UserCreate, UserUpdate, UserResponse
 
@@ -77,8 +79,14 @@ def get_user(
 def update_user(
     user_data: UserUpdate,
     user_id: str = Path(..., description="ID do usuário"),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    if str(current_user.id) != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Voce nao pode editar este usuario",
+        )
 
     user = (
         db.query(User)
@@ -92,6 +100,28 @@ def update_user(
             detail="Usuário não encontrado"
         )
 
+    conflict_filters = []
+
+    if user_data.email is not None:
+      conflict_filters.append(User.email == user_data.email)
+
+    if user_data.username is not None:
+      conflict_filters.append(User.username == user_data.username)
+
+    if conflict_filters:
+        existing_user = (
+            db.query(User)
+            .filter(User.id != user.id)
+            .filter(or_(*conflict_filters))
+            .first()
+        )
+
+        if existing_user:
+            raise HTTPException(
+                status_code=400,
+                detail="Email ou username já cadastrados",
+            )
+
     if user_data.username is not None:
         user.username = user_data.username
 
@@ -101,7 +131,14 @@ def update_user(
     if user_data.password is not None:
         user.password = hash_password(user_data.password)
 
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail="Email ou username já cadastrados",
+        )
 
     db.refresh(user)
 
