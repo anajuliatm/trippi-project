@@ -445,6 +445,7 @@ export function TripDetailsPage() {
   const [tripData, setTripData] = useState<TripDetailsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [overviewModalError, setOverviewModalError] = useState<string | null>(null);
   const [isOverviewEditOpen, setIsOverviewEditOpen] = useState(false);
   const [isTripDeleteOpen, setIsTripDeleteOpen] = useState(false);
   const [isBudgetEditOpen, setIsBudgetEditOpen] = useState(false);
@@ -551,6 +552,7 @@ export function TripDetailsPage() {
       return;
     }
 
+    setOverviewModalError(null);
     setOverviewForm({
       departureDate: tripData.departureDate,
       endDate: tripData.endDate,
@@ -610,6 +612,7 @@ export function TripDetailsPage() {
     }
 
     try {
+      setOverviewModalError(null);
       setError(null);
 
       const shouldUpdateTrip =
@@ -652,11 +655,17 @@ export function TripDetailsPage() {
       setIsOverviewEditOpen(false);
       await reloadTripDetails();
     } catch (saveError) {
-      setError(
+      const message =
         saveError instanceof Error
           ? saveError.message
-          : "Nao foi possivel atualizar os dados da viagem.",
-      );
+          : "Nao foi possivel atualizar os dados da viagem.";
+
+      if (message === "Apenas o dono da viagem pode atualiza-la") {
+        setOverviewModalError("Apenas o owner da viagem pode alterar a data.");
+        return;
+      }
+
+      setOverviewModalError(message);
     }
   }
 
@@ -811,7 +820,7 @@ export function TripDetailsPage() {
       ]);
       setParticipantInput("");
     } catch (participantError) {
-      setError(
+      setOverviewModalError(
         participantError instanceof Error
           ? participantError.message
           : "Nao foi possivel adicionar o participante.",
@@ -921,10 +930,20 @@ export function TripDetailsPage() {
         <Modal
           open={isOverviewEditOpen}
           title="Editar Viagem"
-          onClose={() => setIsOverviewEditOpen(false)}
+          onClose={() => {
+            setOverviewModalError(null);
+            setIsOverviewEditOpen(false);
+          }}
           footer={
             <>
-              <button type="button" className="modal-btn" onClick={() => setIsOverviewEditOpen(false)}>
+              <button
+                type="button"
+                className="modal-btn"
+                onClick={() => {
+                  setOverviewModalError(null);
+                  setIsOverviewEditOpen(false);
+                }}
+              >
                 Cancelar
               </button>
               <button type="button" className="modal-btn modal-btn--primary" onClick={handleSaveOverview}>
@@ -934,6 +953,10 @@ export function TripDetailsPage() {
           }
         >
           <form className="modal-form" onSubmit={(event) => event.preventDefault()}>
+            {overviewModalError ? (
+              <p className="trip-modal-message trip-modal-message--error">{overviewModalError}</p>
+            ) : null}
+
             <div className="modal-inline-fields">
               <div className="modal-form__row">
                 <label htmlFor="overview-departure">Data de ida</label>
