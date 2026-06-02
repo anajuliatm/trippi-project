@@ -1,17 +1,47 @@
 import { motion } from "framer-motion";
-import { ArrowDownLeft, ArrowUpRight, PiggyBank, ReceiptText, Users } from "lucide-react";
-import { useMemo, useState } from "react";
-import { MainLayout } from "../../layouts/MainLayout";
 import {
-  CURRENT_USER_ID,
-  getMemberName,
-  tripFinanceRecords,
-  type TripDebtSettlement,
-} from "../../mock/finance";
-import { trips } from "../../mock/trips";
+  ArrowDownLeft,
+  ArrowUpRight,
+  PiggyBank,
+  ReceiptText,
+  Users,
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useAuth } from "../../contexts/AuthContext";
+import { MainLayout } from "../../layouts/MainLayout";
+import { getTripPaymentsRequest, type PaymentEntry } from "../../services/paymentService";
+import {
+  getDashboardTripsRequest,
+  getTripBalancesRequest,
+  type DashboardTrip,
+  type TripParticipantBalance,
+} from "../../services/tripService";
 import "../../styles/finance-page.css";
 
 type FinanceTab = "summary" | "settlements";
+
+type TripSummaryView = {
+  tripId: string;
+  destination: string;
+  participants: number;
+  budget: number;
+  spent: number;
+  myPaid: number;
+  myShouldPay: number;
+  balance: number;
+};
+
+type SettlementView = {
+  id: string;
+  tripId: string;
+  destination: string;
+  fromUserId: string;
+  toUserId: string;
+  fromName: string;
+  toName: string;
+  amount: number;
+  note: string;
+};
 
 const TAB_LABELS: Record<FinanceTab, string> = {
   summary: "Resumo pessoal",
@@ -37,75 +67,135 @@ function getSignedLabel(value: number) {
   return "Equilibrado";
 }
 
+function formatSettlementNote(note: string | null) {
+  if (!note) {
+    return "Acerto pendente";
+  }
+
+  if (note.startsWith("Auto-generated from finance ")) {
+    return "Acerto automatico da viagem";
+  }
+
+  return note;
+}
+
 export function FinancePage() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<FinanceTab>("summary");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [tripSummaries, setTripSummaries] = useState<TripSummaryView[]>([]);
+  const [settlements, setSettlements] = useState<SettlementView[]>([]);
 
-  const activeTrips = useMemo(() => trips.filter((trip) => trip.status === "active"), []);
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
 
-  const tripSummaries = useMemo(() => {
-    return activeTrips.map((trip) => {
-      const financeRecord = tripFinanceRecords.find((record) => record.tripId === trip.id);
-      const myContribution =
-        financeRecord?.contributions.find((contribution) => contribution.memberId === CURRENT_USER_ID)
-          ?.amount ??
-        trip.budget / trip.participants;
-      const mySpentShare = trip.spent / trip.participants;
-      const balance = myContribution - mySpentShare;
+    async function loadFinance() {
+      try {
+        setLoading(true);
+        setError(null);
 
-      return {
-        tripId: trip.id,
-        destination: trip.destination,
-        participants: trip.participants,
-        budget: trip.budget,
-        spent: trip.spent,
-        myContribution,
-        mySpentShare,
-        balance,
-      };
-    });
-  }, [activeTrips]);
+        const dashboardTrips = await getDashboardTripsRequest();
+        const activeTrips = dashboardTrips.filter((trip) => trip.status === "active");
 
-  const settlements = useMemo(() => {
-    const activeTripIds = new Set(activeTrips.map((trip) => trip.id));
+        const tripData = await Promise.all(
+          activeTrips.map(async (trip) => {
+            const [balances, payments] = await Promise.all([
+              getTripBalancesRequest(trip.id),
+              getTripPaymentsRequest(trip.id),
+            ]);
 
-    return tripFinanceRecords
-      .filter((record) => activeTripIds.has(record.tripId))
-      .flatMap((record) => {
-        const destination = activeTrips.find((trip) => trip.id === record.tripId)?.destination ?? "Viagem";
+            return { trip, balances, payments };
+          }),
+        );
 
-        return record.settlements.map((item) => ({
-          ...item,
-          tripId: record.tripId,
-          destination,
-        }));
-      });
-  }, [activeTrips]);
+        const nextSummaries = tripData.map(({ trip, balances }) =>
+          mapTripSummary(trip, balances, user!.id),
+        );
+
+        const usernameMap = buildUsernameMap(tripData.flatMap((item) => item.balances));
+
+        const nextSettlements = tripData.flatMap(({ trip, payments }) =>
+          mapTripSettlements(payments, trip, user!.id, usernameMap),
+        );
+
+        setTripSummaries(nextSummaries);
+        setSettlements(nextSettlements);
+      } catch (loadError) {
+        setError(
+          loadError instanceof Error
+            ? loadError.message
+            : "Nao foi possivel carregar o financeiro.",
+        );
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    void loadFinance();
+  }, [user]);
 
   const totals = useMemo(() => {
     const totalBudget = tripSummaries.reduce((total, trip) => total + trip.budget, 0);
     const totalSpent = tripSummaries.reduce((total, trip) => total + trip.spent, 0);
-    const totalMyContribution = tripSummaries.reduce((total, trip) => total + trip.myContribution, 0);
-    const totalMySpentShare = tripSummaries.reduce((total, trip) => total + trip.mySpentShare, 0);
-    const myBalance = totalMyContribution - totalMySpentShare;
+    const totalMyPaid = tripSummaries.reduce((total, trip) => total + trip.myPaid, 0);
+    const totalMyShouldPay = tripSummaries.reduce(
+      (total, trip) => total + trip.myShouldPay,
+      0,
+    );
+    const myBalance = tripSummaries.reduce((total, trip) => total + trip.balance, 0);
 
     const myIncoming = settlements
-      .filter((settlement) => settlement.toMemberId === CURRENT_USER_ID)
+      .filter((settlement) => settlement.toUserId === user?.id)
       .reduce((total, settlement) => total + settlement.amount, 0);
 
     const myOutgoing = settlements
-      .filter((settlement) => settlement.fromMemberId === CURRENT_USER_ID)
+      .filter((settlement) => settlement.fromUserId === user?.id)
       .reduce((total, settlement) => total + settlement.amount, 0);
 
     return {
       totalBudget,
       totalSpent,
-      totalMyContribution,
-      totalMySpentShare,
+      totalMyPaid,
+      totalMyShouldPay,
       myBalance,
       myIncoming,
       myOutgoing,
     };
-  }, [settlements, tripSummaries]);
+  }, [settlements, tripSummaries, user?.id]);
+
+  if (loading) {
+    return (
+      <MainLayout>
+        <div className="finance-page">
+          <header className="finance-page__header">
+            <h1>Financeiro</h1>
+          </header>
+          <section className="settlement-empty">
+            <h3>Carregando financeiro...</h3>
+          </section>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <MainLayout>
+        <div className="finance-page">
+          <header className="finance-page__header">
+            <h1>Financeiro</h1>
+          </header>
+          <section className="settlement-empty">
+            <h3>Nao foi possivel carregar os dados.</h3>
+            <p>{error}</p>
+          </section>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -117,16 +207,16 @@ export function FinancePage() {
         <section className="finance-kpis">
           <article className="finance-kpi-card">
             <span>
-              <PiggyBank size={16} /> Voce adicionou
+              <PiggyBank size={16} /> Voce pagou
             </span>
-            <strong>{formatCurrency(totals.totalMyContribution)}</strong>
+            <strong>{formatCurrency(totals.totalMyPaid)}</strong>
           </article>
 
           <article className="finance-kpi-card">
             <span>
-              <ReceiptText size={16} /> Sua cota gasta
+              <ReceiptText size={16} /> A pagar
             </span>
-            <strong>{formatCurrency(totals.totalMySpentShare)}</strong>
+            <strong>{formatCurrency(totals.totalMyShouldPay)}</strong>
           </article>
 
           <article className="finance-kpi-card">
@@ -173,20 +263,20 @@ export function FinancePage() {
 
                 <div className="finance-trip-card__grid">
                   <p>
-                    Orcamento total
+                    Orçamento total
                     <strong>{formatCurrency(trip.budget)}</strong>
                   </p>
                   <p>
-                    Gasto da viagem
+                    Gasto total da viagem
                     <strong>{formatCurrency(trip.spent)}</strong>
                   </p>
                   <p>
-                    Voce adicionou
-                    <strong>{formatCurrency(trip.myContribution)}</strong>
+                    Você pagou
+                    <strong>{formatCurrency(trip.myPaid)}</strong>
                   </p>
                   <p>
-                    Seu gastos
-                    <strong>{formatCurrency(trip.mySpentShare)}</strong>
+                    A pagar
+                    <strong>{formatCurrency(trip.myShouldPay)}</strong>
                   </p>
                 </div>
 
@@ -204,6 +294,7 @@ export function FinancePage() {
             settlements={settlements}
             incoming={totals.myIncoming}
             outgoing={totals.myOutgoing}
+            currentUserId={user?.id ?? ""}
           />
         )}
       </div>
@@ -211,14 +302,67 @@ export function FinancePage() {
   );
 }
 
+function mapTripSummary(
+  trip: DashboardTrip,
+  balances: TripParticipantBalance[],
+  currentUserId: string,
+): TripSummaryView {
+  const myBalance = balances.find((item) => item.user_id === currentUserId);
+
+  return {
+    tripId: trip.id,
+    destination: trip.destination,
+    participants: trip.participants,
+    budget: trip.budget,
+    spent: trip.spent,
+    myPaid: Number(myBalance?.paid ?? 0),
+    myShouldPay: Number(myBalance?.should_pay ?? 0),
+    balance: Number(myBalance?.balance ?? 0),
+  };
+}
+
+function buildUsernameMap(balances: TripParticipantBalance[]) {
+  return balances.reduce<Record<string, string>>((accumulator, balance) => {
+    accumulator[balance.user_id] = balance.username;
+    return accumulator;
+  }, {});
+}
+
+function mapTripSettlements(
+  payments: PaymentEntry[],
+  trip: DashboardTrip,
+  currentUserId: string,
+  usernameMap: Record<string, string>,
+): SettlementView[] {
+  return payments
+    .filter(
+      (payment) =>
+        payment.status !== "settled" &&
+        (payment.from_user_id === currentUserId || payment.to_user_id === currentUserId),
+    )
+    .map((payment) => ({
+      id: payment.id,
+      tripId: trip.id,
+      destination: trip.destination,
+      fromUserId: payment.from_user_id,
+      toUserId: payment.to_user_id,
+      fromName: usernameMap[payment.from_user_id] ?? "Participante",
+      toName: usernameMap[payment.to_user_id] ?? "Participante",
+      amount: Number(payment.amount),
+      note: formatSettlementNote(payment.note),
+    }));
+}
+
 function SettlementsTab({
   settlements,
   incoming,
   outgoing,
+  currentUserId,
 }: {
-  settlements: (TripDebtSettlement & { destination: string; tripId: number })[];
+  settlements: SettlementView[];
   incoming: number;
   outgoing: number;
+  currentUserId: string;
 }) {
   return (
     <section className="settlements-section">
@@ -244,11 +388,11 @@ function SettlementsTab({
           </div>
         ) : (
           settlements.map((settlement) => {
-            const isIncoming = settlement.toMemberId === CURRENT_USER_ID;
-            const isOutgoing = settlement.fromMemberId === CURRENT_USER_ID;
+            const isIncoming = settlement.toUserId === currentUserId;
+            const isOutgoing = settlement.fromUserId === currentUserId;
 
             return (
-              <article key={`${settlement.tripId}-${settlement.note}`} className="settlement-item">
+              <article key={settlement.id} className="settlement-item">
                 <header>
                   <h3>{settlement.destination}</h3>
                   <strong className={isIncoming ? "is-positive" : isOutgoing ? "is-negative" : ""}>
@@ -257,9 +401,9 @@ function SettlementsTab({
                 </header>
 
                 <p>
-                  <span>{getMemberName(settlement.fromMemberId)}</span>
+                  <span>{settlement.fromName}</span>
                   <ArrowUpRight size={13} />
-                  <span>{getMemberName(settlement.toMemberId)}</span>
+                  <span>{settlement.toName}</span>
                 </p>
 
                 <small>{settlement.note}</small>

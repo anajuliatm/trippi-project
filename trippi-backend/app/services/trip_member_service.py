@@ -27,25 +27,26 @@ def add_member(
     new_member = TripMember(**member.model_dump())
 
     try:
-        with db.begin():
-            _get_trip_or_404(db=db, trip_id=member.trip_id)
-            existing_member = db.execute(
-                select(TripMember).where(
-                    TripMember.trip_id == member.trip_id,
-                    TripMember.user_id == member.user_id,
-                )
-            ).scalar_one_or_none()
+        _get_trip_or_404(db=db, trip_id=member.trip_id)
+        existing_member = db.execute(
+            select(TripMember).where(
+                TripMember.trip_id == member.trip_id,
+                TripMember.user_id == member.user_id,
+            )
+        ).scalar_one_or_none()
 
-            if existing_member is not None:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Usuário já participa da viagem",
-                )
+        if existing_member is not None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Usuário já participa da viagem",
+            )
 
-            db.add(new_member)
-            db.flush()
-            finance_service.recalculate_trip_payments(db=db, trip_id=new_member.trip_id)
+        db.add(new_member)
+        db.flush()
+        finance_service.recalculate_trip_payments(db=db, trip_id=new_member.trip_id)
+        db.commit()
     except IntegrityError as exc:
+        db.rollback()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Nao foi possivel adicionar o membro na viagem",
@@ -68,45 +69,46 @@ def list_trip_members(db: Session, trip_id: str) -> list[TripMember]:
 
 def delete_member(db: Session, trip_id: str, user_id: str) -> dict[str, str]:
     try:
-        with db.begin():
-            member = db.execute(
-                select(TripMember).where(
-                    TripMember.trip_id == trip_id,
-                    TripMember.user_id == user_id,
-                )
-            ).scalar_one_or_none()
+        member = db.execute(
+            select(TripMember).where(
+                TripMember.trip_id == trip_id,
+                TripMember.user_id == user_id,
+            )
+        ).scalar_one_or_none()
 
-            if member is None:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Membro não encontrado",
-                )
+        if member is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Membro não encontrado",
+            )
 
-            member_count = db.execute(
-                select(func.count()).select_from(TripMember).where(TripMember.trip_id == trip_id)
-            ).scalar_one()
-            if member_count <= 1:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="A viagem precisa ter ao menos um participante",
-                )
+        member_count = db.execute(
+            select(func.count()).select_from(TripMember).where(TripMember.trip_id == trip_id)
+        ).scalar_one()
+        if member_count <= 1:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="A viagem precisa ter ao menos um participante",
+            )
 
-            has_expense = db.execute(
-                select(Finance.id).where(
-                    Finance.trip_id == trip_id,
-                    Finance.user_id == user_id,
-                    Finance.type == EXPENSE_TYPE,
-                )
-            ).scalar_one_or_none()
-            if has_expense is not None:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Nao e possivel remover um membro com despesas registradas",
-                )
+        has_expense = db.execute(
+            select(Finance.id).where(
+                Finance.trip_id == trip_id,
+                Finance.user_id == user_id,
+                Finance.type == EXPENSE_TYPE,
+            )
+        ).scalar_one_or_none()
+        if has_expense is not None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Nao e possivel remover um membro com despesas registradas",
+            )
 
-            db.delete(member)
-            finance_service.recalculate_trip_payments(db=db, trip_id=trip_id)
+        db.delete(member)
+        finance_service.recalculate_trip_payments(db=db, trip_id=trip_id)
+        db.commit()
     except IntegrityError as exc:
+        db.rollback()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Nao foi possivel remover o membro da viagem",

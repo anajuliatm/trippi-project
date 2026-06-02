@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.dependencies import get_db
+from app.dependencies import get_current_user, get_db
+from app.models.user import User
 from app.schemas.finance import (
     TripFinanceSummaryResponse,
     TripParticipantBalanceResponse,
@@ -27,8 +28,8 @@ def create_trip(trip: TripCreate, db: Session = Depends(get_db)):
     summary="Listar viagens",
     description="Retorna todas as viagens cadastradas."
 )
-def get_trips(db: Session = Depends(get_db)):
-    return trip_service.list_trips(db=db)
+def get_trips(current_user: User = Depends(get_current_user), db: Session = Depends(get_db),):
+    return trip_service.list_trips(db=db, user_id=str(current_user.id))
 
 
 @router.get(
@@ -37,8 +38,8 @@ def get_trips(db: Session = Depends(get_db)):
     summary="Buscar viagem",
     description="Retorna uma viagem pelo identificador."
 )
-def get_trip_by_id(trip_id: str, db: Session = Depends(get_db)):
-    return trip_service.get_trip_by_id(db=db, trip_id=trip_id)
+def get_trip_by_id(trip_id: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    return trip_service.get_trip_by_id(db=db, trip_id=trip_id, user_id=str(current_user.id))
 
 
 @router.get(
@@ -47,8 +48,8 @@ def get_trip_by_id(trip_id: str, db: Session = Depends(get_db)):
     summary="Resumo financeiro da viagem",
     description="Retorna orçamento, contribuições, despesas e saldo restante da viagem."
 )
-def get_trip_summary(trip_id: str, db: Session = Depends(get_db)):
-    return trip_service.get_trip_summary(db=db, trip_id=trip_id)
+def get_trip_summary(trip_id: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    return trip_service.get_trip_summary(db=db, trip_id=trip_id, user_id=str(current_user.id))
 
 
 @router.get(
@@ -57,7 +58,8 @@ def get_trip_summary(trip_id: str, db: Session = Depends(get_db)):
     summary="Saldos dos participantes",
     description="Retorna quanto cada participante pagou, deveria pagar e seu saldo final."
 )
-def get_trip_balances(trip_id: str, db: Session = Depends(get_db)):
+def get_trip_balances(trip_id: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    trip_service.ensure_trip_access(db=db, trip_id=trip_id, user_id=str(current_user.id))
     return finance_service.get_trip_balances(db=db, trip_id=trip_id)
 
 @router.patch(
@@ -69,12 +71,14 @@ def get_trip_balances(trip_id: str, db: Session = Depends(get_db)):
 def update_trip(
     trip_id: str,
     trip_data: TripUpdate,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     return trip_service.update_trip(
         db=db,
         trip_id=trip_id,
         trip_data=trip_data,
+        user_id=str(current_user.id)
     )
 
 @router.delete(
@@ -84,6 +88,7 @@ def update_trip(
 )
 def delete_trip(
     trip_id: str,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    return trip_service.delete_trip(db=db, trip_id=trip_id)
+    return trip_service.delete_trip(db=db, trip_id=trip_id, user_id=str(current_user.id))
