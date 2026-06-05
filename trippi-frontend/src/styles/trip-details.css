@@ -246,14 +246,11 @@
   gap: 9px;
 }
 
-.trip-finance__card-actions {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-}
-
-.trip-finance__card--budget p {
-  padding-right: 44px;
+.trip-finance__card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .trip-finance__card .trip-section__actions {

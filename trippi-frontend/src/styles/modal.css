@@ -120,6 +120,7 @@
   background: rgba(15, 27, 45, 0.62);
   color: var(--text);
   padding: 10px 12px;
+  font: inherit;
 }
 
 .modal-form__row textarea {

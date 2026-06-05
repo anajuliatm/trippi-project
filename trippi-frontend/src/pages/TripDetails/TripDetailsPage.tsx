@@ -208,11 +208,13 @@ function OverviewTab({
   daysRemaining,
   onEdit,
   onDelete,
+  onViewParticipants,
 }: {
   trip: TripDetailsData;
   daysRemaining: number;
   onEdit: () => void;
   onDelete: () => void;
+  onViewParticipants: () => void;
 }) {
   return (
     <section className="trip-overview">
@@ -248,7 +250,11 @@ function OverviewTab({
                 {formatDate(trip.departureDate)} - {formatDate(trip.endDate)}
               </span>
             </div>
-            <div>
+            <div
+              onClick={onViewParticipants}
+              style={{ cursor: "pointer" }}
+              title="Ver participantes"
+            >
               <Users size={18} />
               <span>{trip.participants} participantes</span>
             </div>
@@ -282,12 +288,10 @@ function FinanceSummary({
 
       <div className="trip-finance__grid">
         <article className="trip-finance__card trip-finance__card--budget">
-          <ActionButtons
-            modes={["edit"]}
-            className="trip-finance__card-actions"
-            onAction={() => onEditBudget()}
-          />
-          <p>Orcamento total</p>
+          <div className="trip-finance__card-header">
+            <p>Orcamento total</p>
+            <ActionButtons modes={["edit"]} onAction={() => onEditBudget()} />
+          </div>
           <strong>{formatCurrency(trip.budget)}</strong>
         </article>
 
@@ -471,6 +475,7 @@ export function TripDetailsPage() {
   const [isBudgetEditOpen, setIsBudgetEditOpen] = useState(false);
   const [isItineraryModalOpen, setIsItineraryModalOpen] = useState(false);
   const [isItineraryDeleteOpen, setIsItineraryDeleteOpen] = useState(false);
+  const [isParticipantsOpen, setIsParticipantsOpen] = useState(false);
 
   const [overviewForm, setOverviewForm] = useState<OverviewFormState>({
     departureDate: "",
@@ -940,6 +945,7 @@ export function TripDetailsPage() {
                 daysRemaining={daysRemaining}
                 onEdit={openOverviewEditModal}
                 onDelete={() => setIsTripDeleteOpen(true)}
+                onViewParticipants={() => setIsParticipantsOpen(true)}
               />
             )}
             {activeTab === "finance" && <FinanceSummary trip={tripData} onEditBudget={openBudgetModal} />}
@@ -954,6 +960,30 @@ export function TripDetailsPage() {
             )}
           </motion.div>
         </AnimatePresence>
+
+        <Modal
+          open={isParticipantsOpen}
+          title="Participantes"
+          onClose={() => setIsParticipantsOpen(false)}
+          footer={
+            <button type="button" className="modal-btn" onClick={() => setIsParticipantsOpen(false)}>
+              Fechar
+            </button>
+          }
+        >
+          <div className="trip-participants-editor__list">
+            {tripData.memberDetails.length > 0 ? (
+              tripData.memberDetails.map((participant, index) => (
+                <span key={`${participant.userId}-${index}`} className="trip-participant-chip">
+                  {participant.name}
+                  {participant.role === "owner" ? " (owner)" : ""}
+                </span>
+              ))
+            ) : (
+              <p className="trip-participants-editor__empty">Nenhum participante.</p>
+            )}
+          </div>
+        </Modal>
 
         <Modal
           open={isOverviewEditOpen}
