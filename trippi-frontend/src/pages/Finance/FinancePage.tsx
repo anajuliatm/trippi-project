@@ -200,7 +200,7 @@ export function FinancePage() {
 
           <article className="finance-kpi-card">
             <span>
-              <ReceiptText size={16} /> A pagar
+              <ReceiptText size={16} /> Sua parte
             </span>
             <strong>{formatCurrency(totals.totalMyShouldPay)}</strong>
           </article>
@@ -261,7 +261,7 @@ export function FinancePage() {
                     <strong>{formatCurrency(trip.myPaid)}</strong>
                   </p>
                   <p>
-                    A pagar
+                    Sua parte
                     <strong>{formatCurrency(trip.myShouldPay)}</strong>
                   </p>
                 </div>
@@ -382,7 +382,6 @@ function SettlementsTab({
                   <span>{settlement.toName}</span>
                 </p>
 
-                <small>Sugestao baseada no saldo atual da viagem.</small>
               </article>
             );
           })

@@ -562,10 +562,18 @@ export function TripDetailsPage() {
     return getTripDateRange(tripData.departureDate, tripData.endDate);
   }, [tripData]);
 
-  const budgetPreview = useMemo(() => {
+  const budgetAdjustment = useMemo(() => {
     const parsedValue = Number(budgetDraftValue);
-    return Number.isNaN(parsedValue) ? 0 : Math.max(parsedValue, 0);
+    return Number.isNaN(parsedValue) ? 0 : parsedValue;
   }, [budgetDraftValue]);
+
+  const budgetPreview = useMemo(() => {
+    if (!tripData) {
+      return 0;
+    }
+
+    return Math.max(tripData.budget + budgetAdjustment, 0);
+  }, [budgetAdjustment, tripData]);
 
   function openOverviewEditModal() {
     if (!tripData) {
@@ -694,7 +702,7 @@ export function TripDetailsPage() {
       return;
     }
 
-    setBudgetDraftValue(String(tripData.budget));
+    setBudgetDraftValue("0");
     setIsBudgetEditOpen(true);
   }
 
@@ -1101,7 +1109,6 @@ export function TripDetailsPage() {
                 id="budget-total"
                 type="number"
                 step="0.01"
-                min={0}
                 value={budgetDraftValue}
                 onChange={(event) => setBudgetDraftValue(event.target.value)}
               />
@@ -1113,7 +1120,7 @@ export function TripDetailsPage() {
                   key={`plus-${quickValue}`}
                   type="button"
                   className="modal-btn"
-                  onClick={() => setBudgetDraftValue(String(budgetPreview + quickValue))}
+                  onClick={() => setBudgetDraftValue(String(budgetAdjustment + quickValue))}
                 >
                   + {formatCurrency(quickValue)}
                 </button>
@@ -1124,11 +1131,16 @@ export function TripDetailsPage() {
                   key={`minus-${quickValue}`}
                   type="button"
                   className="modal-btn"
-                  onClick={() => setBudgetDraftValue(String(Math.max(budgetPreview - quickValue, 0)))}
+                  onClick={() => setBudgetDraftValue(String(budgetAdjustment - quickValue))}
                 >
                   - {formatCurrency(quickValue)}
                 </button>
               ))}
+            </div>
+
+            <div className="trip-budget-preview trip-budget-preview--final">
+              <p>Ajuste aplicado</p>
+              <strong>{formatSignedCurrency(budgetAdjustment)}</strong>
             </div>
 
             <div className="trip-budget-preview trip-budget-preview--final">
