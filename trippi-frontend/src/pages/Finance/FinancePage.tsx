@@ -1,7 +1,5 @@
 import { motion } from "framer-motion";
 import {
-  ArrowDownLeft,
-  ArrowUpRight,
   PiggyBank,
   ReceiptText,
   Users,
@@ -43,8 +41,18 @@ type SettlementView = {
   amount: number;
 };
 
+type TripSettlementGroupView = {
+  id: string;
+  tripId: string;
+  destination: string;
+  direction: "incoming" | "outgoing";
+  totalAmount: number;
+  counterparties: number;
+  amountPerPerson: number;
+};
+
 const TAB_LABELS: Record<FinanceTab, string> = {
-  summary: "Resumo Pessoal",
+  summary: "Resumo por Viagem",
   settlements: "Acertos",
 };
 
@@ -53,6 +61,10 @@ function formatCurrency(value: number) {
     style: "currency",
     currency: "BRL",
   }).format(value);
+}
+
+function roundCurrency(value: number) {
+  return Math.round(value * 100) / 100;
 }
 
 function getSignedLabel(value: number) {
@@ -124,8 +136,6 @@ export function FinancePage() {
   }, [user]);
 
   const totals = useMemo(() => {
-    const totalBudget = tripSummaries.reduce((total, trip) => total + trip.budget, 0);
-    const totalSpent = tripSummaries.reduce((total, trip) => total + trip.spent, 0);
     const totalMyPaid = tripSummaries.reduce((total, trip) => total + trip.myPaid, 0);
     const totalMyShouldPay = tripSummaries.reduce(
       (total, trip) => total + trip.myShouldPay,
@@ -133,24 +143,17 @@ export function FinancePage() {
     );
     const myBalance = tripSummaries.reduce((total, trip) => total + trip.balance, 0);
 
-    const myIncoming = settlements
-      .filter((settlement) => settlement.toUserId === user?.id)
-      .reduce((total, settlement) => total + settlement.amount, 0);
-
-    const myOutgoing = settlements
-      .filter((settlement) => settlement.fromUserId === user?.id)
-      .reduce((total, settlement) => total + settlement.amount, 0);
-
     return {
-      totalBudget,
-      totalSpent,
       totalMyPaid,
       totalMyShouldPay,
       myBalance,
-      myIncoming,
-      myOutgoing,
     };
   }, [settlements, tripSummaries, user?.id]);
+
+  const groupedSettlements = useMemo(
+    () => groupSettlementsByTrip(settlements, user?.id ?? ""),
+    [settlements, user?.id],
+  );
 
   if (loading) {
     return (
@@ -257,10 +260,6 @@ export function FinancePage() {
                     <strong>{formatCurrency(trip.spent)}</strong>
                   </p>
                   <p>
-                    Você pagou
-                    <strong>{formatCurrency(trip.myPaid)}</strong>
-                  </p>
-                  <p>
                     Sua parte
                     <strong>{formatCurrency(trip.myShouldPay)}</strong>
                   </p>
@@ -268,20 +267,12 @@ export function FinancePage() {
 
                 <footer className="finance-trip-card__footer">
                   <span>{trip.participants} participantes</span>
-                  <strong className={trip.balance >= 0 ? "is-positive" : "is-negative"}>
-                    {formatCurrency(Math.abs(trip.balance))}
-                  </strong>
                 </footer>
               </motion.article>
             ))}
           </section>
         ) : (
-          <SettlementsTab
-            settlements={settlements}
-            incoming={totals.myIncoming}
-            outgoing={totals.myOutgoing}
-            currentUserId={user?.id ?? ""}
-          />
+          <SettlementsTab settlements={groupedSettlements} />
         )}
       </div>
     </MainLayout>
@@ -329,34 +320,48 @@ function mapTripSettlements(
     }));
 }
 
+function groupSettlementsByTrip(
+  settlements: SettlementView[],
+  currentUserId: string,
+): TripSettlementGroupView[] {
+  const grouped = new Map<string, TripSettlementGroupView>();
+
+  for (const settlement of settlements) {
+    const isIncoming = settlement.toUserId === currentUserId;
+    const direction = isIncoming ? "incoming" : "outgoing";
+    const key = `${settlement.tripId}:${direction}`;
+    const currentGroup = grouped.get(key);
+
+    if (currentGroup) {
+      currentGroup.totalAmount += settlement.amount;
+      currentGroup.counterparties += 1;
+      currentGroup.amountPerPerson = roundCurrency(
+        currentGroup.totalAmount / currentGroup.counterparties,
+      );
+      continue;
+    }
+
+    grouped.set(key, {
+      id: key,
+      tripId: settlement.tripId,
+      destination: settlement.destination,
+      direction,
+      totalAmount: settlement.amount,
+      counterparties: 1,
+      amountPerPerson: roundCurrency(settlement.amount),
+    });
+  }
+
+  return Array.from(grouped.values());
+}
+
 function SettlementsTab({
   settlements,
-  incoming,
-  outgoing,
-  currentUserId,
 }: {
-  settlements: SettlementView[];
-  incoming: number;
-  outgoing: number;
-  currentUserId: string;
+  settlements: TripSettlementGroupView[];
 }) {
   return (
     <section className="settlements-section">
-      <div className="settlements-summary">
-        <article>
-          <span>
-            <ArrowDownLeft size={15} /> A receber
-          </span>
-          <strong>{formatCurrency(incoming)}</strong>
-        </article>
-        <article>
-          <span>
-            <ArrowUpRight size={15} /> A pagar
-          </span>
-          <strong>{formatCurrency(outgoing)}</strong>
-        </article>
-      </div>
-
       <div className="settlement-list">
         {settlements.length === 0 ? (
           <div className="settlement-empty">
@@ -364,24 +369,16 @@ function SettlementsTab({
           </div>
         ) : (
           settlements.map((settlement) => {
-            const isIncoming = settlement.toUserId === currentUserId;
-            const isOutgoing = settlement.fromUserId === currentUserId;
-
             return (
               <article key={settlement.id} className="settlement-item">
-                <header>
-                  <h3>{settlement.destination}</h3>
-                  <strong className={isIncoming ? "is-positive" : isOutgoing ? "is-negative" : ""}>
-                    {formatCurrency(settlement.amount)}
+                <p className="settlement-item__summary">
+                  <span className="settlement-item__destination">{settlement.destination}</span>
+                  <span className="settlement-item__divider">|</span>
+                  <span>Valor por pessoa:</span>
+                  <strong className="settlement-item__value">
+                    {formatCurrency(settlement.amountPerPerson)}
                   </strong>
-                </header>
-
-                <p>
-                  <span>{settlement.fromName}</span>
-                  <ArrowUpRight size={13} />
-                  <span>{settlement.toName}</span>
                 </p>
-
               </article>
             );
           })
