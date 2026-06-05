@@ -8,6 +8,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models.finance import Finance
+from app.models.itinerary import Itinerary
 from app.models.trip import Trip
 from app.models.trip_member import TripMember
 from app.models.user import User
@@ -21,6 +22,7 @@ from app.schemas.finance import (
 
 EXPENSE_TYPE = "expense"
 CENT = Decimal("0.01")
+ITINERARY_FINANCE_PREFIX = "[itinerary-expense:"
 
 
 @dataclass(frozen=True)
@@ -150,6 +152,105 @@ def delete_finance_entry(
         db.delete(finance)
 
     return {"message": "Lançamento deletado"}
+
+
+def sync_itinerary_expense(
+    db: Session,
+    itinerary: Itinerary,
+    fallback_user_id: UUID,
+) -> Finance | None:
+    description = build_itinerary_finance_description(
+        itinerary_id=itinerary.id,
+        title=itinerary.title,
+    )
+    finance_entries = _get_itinerary_finance_entries(
+        db=db,
+        trip_id=itinerary.trip_id,
+        itinerary_id=itinerary.id,
+    )
+    finance_entry = finance_entries[0] if finance_entries else None
+
+    for duplicate_entry in finance_entries[1:]:
+        db.delete(duplicate_entry)
+
+    amount = _quantize(_to_decimal(itinerary.estimated_cost))
+
+    if amount < CENT:
+        if finance_entry is not None:
+            db.delete(finance_entry)
+        return None
+
+    if finance_entry is None:
+        finance_entry = Finance(
+            trip_id=itinerary.trip_id,
+            user_id=fallback_user_id,
+            type=EXPENSE_TYPE,
+            description=description,
+            amount=amount,
+        )
+        db.add(finance_entry)
+        db.flush()
+        return finance_entry
+
+    finance_entry.type = EXPENSE_TYPE
+    finance_entry.description = description
+    finance_entry.amount = amount
+    db.flush()
+    return finance_entry
+
+
+def delete_itinerary_expense(
+    db: Session,
+    trip_id: str | UUID,
+    itinerary_id: str | UUID,
+) -> None:
+    finance_entries = _get_itinerary_finance_entries(
+        db=db,
+        trip_id=trip_id,
+        itinerary_id=itinerary_id,
+    )
+
+    for finance_entry in finance_entries:
+        db.delete(finance_entry)
+
+
+def sync_trip_itinerary_expenses(
+    db: Session,
+    trip_id: str | UUID,
+    fallback_user_id: UUID,
+) -> None:
+    statement = (
+        select(Itinerary)
+        .where(Itinerary.trip_id == trip_id)
+        .order_by(Itinerary.created_at.asc(), Itinerary.id.asc())
+    )
+    itinerary_entries = db.execute(statement).scalars().all()
+
+    for itinerary in itinerary_entries:
+        sync_itinerary_expense(
+            db=db,
+            itinerary=itinerary,
+            fallback_user_id=fallback_user_id,
+        )
+
+
+def build_itinerary_finance_description(
+    itinerary_id: str | UUID,
+    title: str,
+) -> str:
+    safe_title = title.strip() or "Atividade do roteiro"
+    return f"{ITINERARY_FINANCE_PREFIX}{itinerary_id}] {safe_title}"
+
+
+def parse_itinerary_finance_description(description: str | None) -> str | None:
+    if not description or not description.startswith(ITINERARY_FINANCE_PREFIX):
+        return description
+
+    marker_end = description.find("] ")
+    if marker_end == -1:
+        return description
+
+    return description[marker_end + 2 :]
 
 
 def get_trip_summary(db: Session, trip_id: str | UUID) -> TripFinanceSummaryResponse:
@@ -357,6 +458,23 @@ def _get_finance_or_404(
         )
 
     return finance
+
+
+def _get_itinerary_finance_entries(
+    db: Session,
+    trip_id: str | UUID,
+    itinerary_id: str | UUID,
+) -> list[Finance]:
+    description_prefix = f"{ITINERARY_FINANCE_PREFIX}{itinerary_id}]"
+    statement = (
+        select(Finance)
+        .where(
+            Finance.trip_id == trip_id,
+            Finance.description.like(f"{description_prefix}%"),
+        )
+        .order_by(Finance.created_at.asc(), Finance.id.asc())
+    )
+    return list(db.execute(statement).scalars().all())
 
 
 def _get_trip_or_404(db: Session, trip_id: str | UUID) -> Trip:

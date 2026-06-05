@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, Path
 from sqlalchemy.orm import Session
 
-from app.dependencies import get_db
+from app.dependencies import get_current_user, get_db
+from app.models.user import User
 from app.services import finance_service
+from app.services import trip_service
 from app.schemas.finance import (
     FinanceCreate,
     FinanceUpdate,
@@ -42,8 +44,15 @@ def create_entry(
 )
 def get_all_trip_finances(
     trip_id: str = Path(..., description="ID da viagem"),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    trip_service.ensure_trip_access(db=db, trip_id=trip_id, user_id=str(current_user.id))
+    finance_service.sync_trip_itinerary_expenses(
+        db=db,
+        trip_id=trip_id,
+        fallback_user_id=current_user.id,
+    )
     return finance_service.list_trip_finances(db=db, trip_id=trip_id)
 
 @router.get(
@@ -55,8 +64,15 @@ def get_all_trip_finances(
 def get_trip_finance(
     trip_id: str = Path(..., description="ID da viagem"),
     user_id: str = Path(..., description="ID do usuário"),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    trip_service.ensure_trip_access(db=db, trip_id=trip_id, user_id=str(current_user.id))
+    finance_service.sync_trip_itinerary_expenses(
+        db=db,
+        trip_id=trip_id,
+        fallback_user_id=current_user.id,
+    )
     return finance_service.list_user_trip_finances(
         db=db,
         trip_id=trip_id,

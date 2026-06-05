@@ -1,4 +1,5 @@
 from decimal import Decimal
+from uuid import UUID
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
@@ -142,6 +143,11 @@ def get_trip_summary(
     user_id: str,
 ) -> TripFinanceSummaryResponse:
     _get_trip_or_404_for_user(db=db, trip_id=trip_id, user_id=user_id)
+    finance_service.sync_trip_itinerary_expenses(
+        db=db,
+        trip_id=trip_id,
+        fallback_user_id=UUID(user_id),
+    )
     return finance_service.get_trip_summary(db=db, trip_id=trip_id)
 
 

@@ -44,8 +44,8 @@ type SettlementView = {
 };
 
 const TAB_LABELS: Record<FinanceTab, string> = {
-  summary: "Resumo pessoal",
-  settlements: "Sugestoes de acerto",
+  summary: "Resumo Pessoal",
+  settlements: "Acertos",
 };
 
 function formatCurrency(value: number) {

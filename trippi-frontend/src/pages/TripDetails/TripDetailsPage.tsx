@@ -32,6 +32,8 @@ import {
 import { getUserByEmailRequest, getUsersMapRequest } from "../../services/userService";
 import "../../styles/trip-details.css";
 
+const ITINERARY_FINANCE_PREFIX = "[itinerary-expense:";
+
 function formatDate(date: string) {
   return new Intl.DateTimeFormat("pt-BR", {
     day: "2-digit",
@@ -66,6 +68,24 @@ function getTripDateRange(startDate: string, endDate: string) {
   }
 
   return dates;
+}
+
+function getFinanceEntryDescription(description: string | null) {
+  if (!description) {
+    return "Lancamento sem descricao";
+  }
+
+  if (!description.startsWith(ITINERARY_FINANCE_PREFIX)) {
+    return description;
+  }
+
+  const markerEnd = description.indexOf("] ");
+
+  if (markerEnd === -1) {
+    return description;
+  }
+
+  return description.slice(markerEnd + 2) || "Atividade do roteiro";
 }
 
 type DetailTab = "overview" | "finance" | "itinerary";
@@ -383,7 +403,7 @@ function ItineraryTabs({
           transition={{ duration: 0.25, ease: "easeOut" }}
         >
           {activeDay && activeDay.activities.length > 0 ? (
-            activeDay.activities.map((activity, activityIndex) => (
+            activeDay.activities.map((activity) => (
               <article key={activity.id} className="trip-activity">
                 <div className="trip-activity__time">
                   <Clock3 size={16} />
@@ -1322,7 +1342,7 @@ function mapFinances(
     userId: finance.user_id,
     username: userMap[finance.user_id]?.username ?? finance.user_id,
     type: finance.type,
-    description: finance.description ?? "Lancamento sem descricao",
+    description: getFinanceEntryDescription(finance.description),
     amount: Number(finance.amount),
   }));
 }

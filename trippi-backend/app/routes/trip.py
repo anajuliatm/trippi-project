@@ -61,6 +61,11 @@ def get_trip_summary(trip_id: str, current_user: User = Depends(get_current_user
 )
 def get_trip_balances(trip_id: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     trip_service.ensure_trip_access(db=db, trip_id=trip_id, user_id=str(current_user.id))
+    finance_service.sync_trip_itinerary_expenses(
+        db=db,
+        trip_id=trip_id,
+        fallback_user_id=current_user.id,
+    )
     return finance_service.get_trip_balances(db=db, trip_id=trip_id)
 
 
@@ -72,6 +77,11 @@ def get_trip_balances(trip_id: str, current_user: User = Depends(get_current_use
 )
 def get_trip_settlements(trip_id: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     trip_service.ensure_trip_access(db=db, trip_id=trip_id, user_id=str(current_user.id))
+    finance_service.sync_trip_itinerary_expenses(
+        db=db,
+        trip_id=trip_id,
+        fallback_user_id=current_user.id,
+    )
     return finance_service.get_trip_settlements(db=db, trip_id=trip_id)
 
 @router.patch(
