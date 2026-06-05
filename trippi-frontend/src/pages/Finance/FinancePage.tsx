@@ -9,12 +9,13 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { MainLayout } from "../../layouts/MainLayout";
-import { getTripPaymentsRequest, type PaymentEntry } from "../../services/paymentService";
 import {
   getDashboardTripsRequest,
   getTripBalancesRequest,
+  getTripSettlementsRequest,
   type DashboardTrip,
   type TripParticipantBalance,
+  type TripSettlement,
 } from "../../services/tripService";
 import "../../styles/finance-page.css";
 
@@ -40,12 +41,11 @@ type SettlementView = {
   fromName: string;
   toName: string;
   amount: number;
-  note: string;
 };
 
 const TAB_LABELS: Record<FinanceTab, string> = {
   summary: "Resumo pessoal",
-  settlements: "Acertos",
+  settlements: "Sugestoes de acerto",
 };
 
 function formatCurrency(value: number) {
@@ -65,18 +65,6 @@ function getSignedLabel(value: number) {
   }
 
   return "Equilibrado";
-}
-
-function formatSettlementNote(note: string | null) {
-  if (!note) {
-    return "Acerto pendente";
-  }
-
-  if (note.startsWith("Auto-generated from finance ")) {
-    return "Acerto automatico da viagem";
-  }
-
-  return note;
 }
 
 export function FinancePage() {
@@ -102,12 +90,12 @@ export function FinancePage() {
 
         const tripData = await Promise.all(
           activeTrips.map(async (trip) => {
-            const [balances, payments] = await Promise.all([
+            const [balances, settlements] = await Promise.all([
               getTripBalancesRequest(trip.id),
-              getTripPaymentsRequest(trip.id),
+              getTripSettlementsRequest(trip.id),
             ]);
 
-            return { trip, balances, payments };
+            return { trip, balances, settlements };
           }),
         );
 
@@ -115,10 +103,8 @@ export function FinancePage() {
           mapTripSummary(trip, balances, user!.id),
         );
 
-        const usernameMap = buildUsernameMap(tripData.flatMap((item) => item.balances));
-
-        const nextSettlements = tripData.flatMap(({ trip, payments }) =>
-          mapTripSettlements(payments, trip, user!.id, usernameMap),
+        const nextSettlements = tripData.flatMap(({ trip, settlements }) =>
+          mapTripSettlements(settlements, trip, user!.id),
         );
 
         setTripSummaries(nextSummaries);
@@ -321,35 +307,25 @@ function mapTripSummary(
   };
 }
 
-function buildUsernameMap(balances: TripParticipantBalance[]) {
-  return balances.reduce<Record<string, string>>((accumulator, balance) => {
-    accumulator[balance.user_id] = balance.username;
-    return accumulator;
-  }, {});
-}
-
 function mapTripSettlements(
-  payments: PaymentEntry[],
+  settlements: TripSettlement[],
   trip: DashboardTrip,
   currentUserId: string,
-  usernameMap: Record<string, string>,
 ): SettlementView[] {
-  return payments
+  return settlements
     .filter(
-      (payment) =>
-        payment.status !== "settled" &&
-        (payment.from_user_id === currentUserId || payment.to_user_id === currentUserId),
+      (settlement) =>
+        settlement.from_user_id === currentUserId || settlement.to_user_id === currentUserId,
     )
-    .map((payment) => ({
-      id: payment.id,
+    .map((settlement, index) => ({
+      id: `${trip.id}:${settlement.from_user_id}:${settlement.to_user_id}:${index}`,
       tripId: trip.id,
       destination: trip.destination,
-      fromUserId: payment.from_user_id,
-      toUserId: payment.to_user_id,
-      fromName: usernameMap[payment.from_user_id] ?? "Participante",
-      toName: usernameMap[payment.to_user_id] ?? "Participante",
-      amount: Number(payment.amount),
-      note: formatSettlementNote(payment.note),
+      fromUserId: settlement.from_user_id,
+      toUserId: settlement.to_user_id,
+      fromName: settlement.from_username,
+      toName: settlement.to_username,
+      amount: Number(settlement.amount),
     }));
 }
 
@@ -384,7 +360,7 @@ function SettlementsTab({
       <div className="settlement-list">
         {settlements.length === 0 ? (
           <div className="settlement-empty">
-            <h3>Sem acertos pendentes nas viagens ativas.</h3>
+            <h3>Sem sugestoes de acerto nas viagens ativas.</h3>
           </div>
         ) : (
           settlements.map((settlement) => {
@@ -406,7 +382,7 @@ function SettlementsTab({
                   <span>{settlement.toName}</span>
                 </p>
 
-                <small>{settlement.note}</small>
+                <small>Sugestao baseada no saldo atual da viagem.</small>
               </article>
             );
           })

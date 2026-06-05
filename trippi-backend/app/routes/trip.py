@@ -6,6 +6,7 @@ from app.models.user import User
 from app.schemas.finance import (
     TripFinanceSummaryResponse,
     TripParticipantBalanceResponse,
+    TripSettlementResponse,
 )
 from app.schemas.trip import TripCreate, TripUpdate, TripResponse
 from app.services import finance_service, trip_service
@@ -61,6 +62,17 @@ def get_trip_summary(trip_id: str, current_user: User = Depends(get_current_user
 def get_trip_balances(trip_id: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     trip_service.ensure_trip_access(db=db, trip_id=trip_id, user_id=str(current_user.id))
     return finance_service.get_trip_balances(db=db, trip_id=trip_id)
+
+
+@router.get(
+    "/{trip_id}/settlements",
+    response_model=list[TripSettlementResponse],
+    summary="Sugestoes de acerto da viagem",
+    description="Retorna sugestoes de acerto calculadas em memoria a partir dos saldos dos participantes."
+)
+def get_trip_settlements(trip_id: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    trip_service.ensure_trip_access(db=db, trip_id=trip_id, user_id=str(current_user.id))
+    return finance_service.get_trip_settlements(db=db, trip_id=trip_id)
 
 @router.patch(
     "/{trip_id}",

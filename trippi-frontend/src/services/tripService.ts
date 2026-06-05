@@ -53,6 +53,14 @@ export type TripParticipantBalance = {
   balance: number;
 };
 
+export type TripSettlement = {
+  from_user_id: string;
+  from_username: string;
+  to_user_id: string;
+  to_username: string;
+  amount: number;
+};
+
 export type DashboardTrip = {
   id: string;
   destination: string;
@@ -174,6 +182,17 @@ export async function getTripBalancesRequest(
     return data;
   } catch (error) {
     parseApiError(error, "Nao foi possivel carregar os saldos da viagem.");
+  }
+}
+
+export async function getTripSettlementsRequest(
+  tripId: string,
+): Promise<TripSettlement[]> {
+  try {
+    const { data } = await api.get<TripSettlement[]>(`/trips/${tripId}/settlements`);
+    return data;
+  } catch (error) {
+    parseApiError(error, "Nao foi possivel carregar as sugestoes de acerto da viagem.");
   }
 }
 

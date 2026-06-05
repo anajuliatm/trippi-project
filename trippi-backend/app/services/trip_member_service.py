@@ -7,8 +7,6 @@ from app.models.finance import Finance
 from app.models.trip import Trip
 from app.models.trip_member import TripMember
 from app.schemas.trip_member import TripMemberCreate
-from app.services import finance_service
-
 EXPENSE_TYPE = "expense"
 
 
@@ -43,7 +41,6 @@ def add_member(
 
         db.add(new_member)
         db.flush()
-        finance_service.recalculate_trip_payments(db=db, trip_id=new_member.trip_id)
         db.commit()
     except IntegrityError as exc:
         db.rollback()
@@ -105,7 +102,6 @@ def delete_member(db: Session, trip_id: str, user_id: str) -> dict[str, str]:
             )
 
         db.delete(member)
-        finance_service.recalculate_trip_payments(db=db, trip_id=trip_id)
         db.commit()
     except IntegrityError as exc:
         db.rollback()
