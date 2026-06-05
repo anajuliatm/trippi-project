@@ -65,11 +65,13 @@
 .trips-grid {
   display: grid;
   gap: 18px;
-  grid-template-columns: repeat(auto-fit, minmax(255px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(255px, 360px));
+  justify-content: start;
 }
 
 .trip-list-card {
   width: 100%;
+  max-width: 360px;
   min-width: 0;
   overflow: hidden;
   border-radius: 24px;
@@ -100,13 +102,15 @@
 .trip-list-card__title-row {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
+  flex-wrap: wrap;
   gap: 10px;
 }
 
 .trip-list-card__title-row h2 {
   font-size: clamp(23px, 3vw, 30px);
   line-height: 1;
+  flex: 1 1 180px;
 }
 
 .trip-list-card__meta {
@@ -124,12 +128,15 @@
 .trip-status {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   border-radius: 999px;
   padding: 7px 11px;
+  min-width: 110px;
   font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
+  flex-shrink: 0;
 }
 
 .trip-status--active {
