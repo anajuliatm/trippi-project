@@ -436,11 +436,13 @@ function ItineraryTabs({
                   <p>{activity.description}</p>
                   <span>{activity.notes}</span>
 
-                  <div className="trip-activity__meta">
-                    <span>
-                      <MapPin size={14} /> {activity.location}
-                    </span>
-                  </div>
+                  {activity.location ? (
+                    <div className="trip-activity__meta">
+                      <span>
+                        <MapPin size={14} /> {activity.location}
+                      </span>
+                    </div>
+                  ) : null}
                 </div>
               </article>
             ))
@@ -486,6 +488,7 @@ export function TripDetailsPage() {
   const [participantInput, setParticipantInput] = useState("");
   const [budgetDraftValue, setBudgetDraftValue] = useState("0");
 
+  const [itineraryModalError, setItineraryModalError] = useState<string | null>(null);
   const [itineraryMode, setItineraryMode] = useState<ItineraryEditorMode>("add");
   const [itineraryForm, setItineraryForm] = useState<ItineraryFormState>({
     date: "",
@@ -767,15 +770,23 @@ export function TripDetailsPage() {
       return;
     }
 
+    if (!itineraryForm.title.trim()) {
+      setItineraryModalError("Informe o título da atividade.");
+      return;
+    }
+
+    setItineraryModalError(null);
+
     const parsedAmount = Number(itineraryForm.amount);
+    const isEditing = itineraryMode === "edit" && editingActivityRef;
     const payload = {
       trip_id: tripData.id,
       title: itineraryForm.title,
-      description: itineraryForm.description || null,
-      location: itineraryForm.location || null,
+      description: isEditing ? itineraryForm.description : (itineraryForm.description || null),
+      location: isEditing ? itineraryForm.location : (itineraryForm.location || null),
       activity_date: itineraryForm.date,
       activity_time: itineraryForm.time || null,
-      notes: itineraryForm.notes || null,
+      notes: isEditing ? itineraryForm.notes : (itineraryForm.notes || null),
       estimated_cost: Number.isNaN(parsedAmount) ? 0 : Math.max(parsedAmount, 0),
     };
 
@@ -1183,7 +1194,7 @@ export function TripDetailsPage() {
         <Modal
           open={isItineraryModalOpen}
           title={itineraryMode === "add" ? "Adicionar item no roteiro" : "Editar item no roteiro"}
-          onClose={() => setIsItineraryModalOpen(false)}
+          onClose={() => { setIsItineraryModalOpen(false); setItineraryModalError(null); }}
           footer={
             <>
               <button type="button" className="modal-btn" onClick={() => setIsItineraryModalOpen(false)}>
@@ -1200,6 +1211,10 @@ export function TripDetailsPage() {
           }
         >
           <form className="modal-form" onSubmit={(event) => event.preventDefault()}>
+            {itineraryModalError ? (
+              <p className="modal-callout">{itineraryModalError}</p>
+            ) : null}
+
             <div className="modal-inline-fields">
               <div className="modal-form__row">
                 <label htmlFor="itinerary-date">Data</label>

@@ -139,10 +139,10 @@ def update_activity(
         activity.title = activity_data.title
 
     if activity_data.description is not None:
-        activity.description = activity_data.description
+        activity.description = activity_data.description or None
 
     if activity_data.location is not None:
-        activity.location = activity_data.location
+        activity.location = activity_data.location or None
 
     if activity_data.activity_date is not None:
         activity.activity_date = activity_data.activity_date
@@ -151,7 +151,7 @@ def update_activity(
         activity.activity_time = activity_data.activity_time
 
     if activity_data.notes is not None:
-        activity.notes = activity_data.notes
+        activity.notes = activity_data.notes or None
 
     if activity_data.estimated_cost is not None:
         activity.estimated_cost = activity_data.estimated_cost
