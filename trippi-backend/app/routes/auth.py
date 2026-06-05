@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import or_
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 from app.core.security import create_access_token, hash_password, verify_password
@@ -22,8 +22,8 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)):
         db.query(User)
         .filter(
             or_(
-                User.email == payload.email,
-                User.username == payload.username,
+                func.lower(User.email) == func.lower(payload.email),
+                func.lower(User.username) == func.lower(payload.username),
             )
         )
         .first()

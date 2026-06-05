@@ -46,6 +46,12 @@ export function ProfilePage() {
       return;
     }
 
+    if (password && !password.trim()) {
+      setMessage("A senha não pode conter apenas espaços.");
+      setMessageType("error");
+      return;
+    }
+
     try {
       setSaving(true);
       setMessage("");

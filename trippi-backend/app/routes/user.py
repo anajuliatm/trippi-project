@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Path, status
-from sqlalchemy import or_
+from sqlalchemy import func, or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -21,8 +21,8 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
         db.query(User)
         .filter(
             or_(
-                User.email == user.email,
-                User.username == user.username,
+                func.lower(User.email) == func.lower(user.email),
+                func.lower(User.username) == func.lower(user.username),
             )
         )
         .first()
@@ -103,10 +103,10 @@ def update_user(
     conflict_filters = []
 
     if user_data.email is not None:
-      conflict_filters.append(User.email == user_data.email)
+      conflict_filters.append(func.lower(User.email) == func.lower(user_data.email))
 
     if user_data.username is not None:
-      conflict_filters.append(User.username == user_data.username)
+      conflict_filters.append(func.lower(User.username) == func.lower(user_data.username))
 
     if conflict_filters:
         existing_user = (
