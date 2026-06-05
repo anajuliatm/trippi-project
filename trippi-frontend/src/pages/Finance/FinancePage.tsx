@@ -1,9 +1,4 @@
 import { motion } from "framer-motion";
-import {
-  PiggyBank,
-  ReceiptText,
-  Users,
-} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { MainLayout } from "../../layouts/MainLayout";
@@ -135,21 +130,6 @@ export function FinancePage() {
     void loadFinance();
   }, [user]);
 
-  const totals = useMemo(() => {
-    const totalMyPaid = tripSummaries.reduce((total, trip) => total + trip.myPaid, 0);
-    const totalMyShouldPay = tripSummaries.reduce(
-      (total, trip) => total + trip.myShouldPay,
-      0,
-    );
-    const myBalance = tripSummaries.reduce((total, trip) => total + trip.balance, 0);
-
-    return {
-      totalMyPaid,
-      totalMyShouldPay,
-      myBalance,
-    };
-  }, [settlements, tripSummaries, user?.id]);
-
   const groupedSettlements = useMemo(
     () => groupSettlementsByTrip(settlements, user?.id ?? ""),
     [settlements, user?.id],
@@ -192,31 +172,6 @@ export function FinancePage() {
         <header className="finance-page__header">
           <h1>Financeiro</h1>
         </header>
-
-        <section className="finance-kpis">
-          <article className="finance-kpi-card">
-            <span>
-              <PiggyBank size={16} /> Voce pagou
-            </span>
-            <strong>{formatCurrency(totals.totalMyPaid)}</strong>
-          </article>
-
-          <article className="finance-kpi-card">
-            <span>
-              <ReceiptText size={16} /> Sua parte
-            </span>
-            <strong>{formatCurrency(totals.totalMyShouldPay)}</strong>
-          </article>
-
-          <article className="finance-kpi-card">
-            <span>
-              <Users size={16} /> Seu saldo geral
-            </span>
-            <strong className={totals.myBalance >= 0 ? "is-positive" : "is-negative"}>
-              {formatCurrency(totals.myBalance)}
-            </strong>
-          </article>
-        </section>
 
         <div className="finance-tabs" role="tablist" aria-label="Abas da pagina financeiro">
           {(Object.keys(TAB_LABELS) as FinanceTab[]).map((tab) => (
