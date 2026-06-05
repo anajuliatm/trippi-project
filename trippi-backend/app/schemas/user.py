@@ -34,6 +34,9 @@ class UserUpdate(BaseModel):
             raise ValueError('senha deve ter pelo menos 4 caracteres')
         return v
 
+class UserEmailLookup(BaseModel):
+    email: EmailStr
+
 class UserResponse(BaseModel): # Esquema para resposta de usuário - saída
     id: UUID
     username: str

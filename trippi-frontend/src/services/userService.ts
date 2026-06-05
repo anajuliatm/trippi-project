@@ -22,6 +22,17 @@ export async function getUserByIdRequest(userId: string): Promise<AppUser> {
   }
 }
 
+export async function getUserByEmailRequest(email: string): Promise<AppUser> {
+  try {
+    const { data } = await api.get<AppUser>("/users/by-email", {
+      params: { email },
+    });
+    return data;
+  } catch (error) {
+    parseApiError(error, "Nao foi possivel localizar o usuario por email.");
+  }
+}
+
 export async function updateUserRequest(
   userId: string,
   payload: UpdateUserPayload,

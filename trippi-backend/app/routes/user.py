@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Path, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 from sqlalchemy import func, or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.core.security import hash_password
 from app.dependencies import get_current_user, get_db
 from app.models.user import User
-from app.schemas.user import UserCreate, UserUpdate, UserResponse
+from app.schemas.user import UserCreate, UserEmailLookup, UserUpdate, UserResponse
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -45,6 +45,32 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
     db.refresh(new_user)
 
     return new_user
+
+@router.get(
+    "/by-email",
+    response_model=UserResponse,
+    summary="Buscar usuário por email",
+    description="Retorna um usuário pelo email."
+)
+def get_user_by_email(
+    email: str = Query(..., description="Email do usuário"),
+    db: Session = Depends(get_db)
+):
+    lookup = UserEmailLookup(email=email)
+
+    user = (
+        db.query(User)
+        .filter(func.lower(User.email) == func.lower(lookup.email))
+        .first()
+    )
+
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="Usuário não encontrado"
+        )
+
+    return user
 
 @router.get(
     "/{user_id}",

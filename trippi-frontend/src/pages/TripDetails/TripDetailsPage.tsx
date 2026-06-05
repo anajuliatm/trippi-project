@@ -29,7 +29,7 @@ import {
   getTripMembersRequest,
   type TripMember,
 } from "../../services/memberService";
-import { getUserByIdRequest, getUsersMapRequest } from "../../services/userService";
+import { getUserByEmailRequest, getUsersMapRequest } from "../../services/userService";
 import "../../styles/trip-details.css";
 
 function formatDate(date: string) {
@@ -796,19 +796,19 @@ export function TripDetailsPage() {
   }
 
   async function handleAddParticipant() {
-    const trimmedParticipantId = participantInput.trim();
+    const trimmedParticipantEmail = participantInput.trim().toLowerCase();
 
-    if (!trimmedParticipantId) {
-      return;
-    }
-
-    if (participantsUsers.some((participant) => participant.userId === trimmedParticipantId)) {
-      setParticipantInput("");
+    if (!trimmedParticipantEmail) {
       return;
     }
 
     try {
-      const user = await getUserByIdRequest(trimmedParticipantId);
+      const user = await getUserByEmailRequest(trimmedParticipantEmail);
+
+      if (participantsUsers.some((participant) => participant.userId === user.id)) {
+        setParticipantInput("");
+        return;
+      }
 
       setParticipantsUsers((previous) => [
         ...previous,
@@ -823,7 +823,7 @@ export function TripDetailsPage() {
       setOverviewModalError(
         participantError instanceof Error
           ? participantError.message
-          : "Nao foi possivel adicionar o participante.",
+          : "Nao foi possivel adicionar o participante por email.",
       );
     }
   }
@@ -984,7 +984,7 @@ export function TripDetailsPage() {
             </div>
 
             <div className="modal-form__row">
-              <label htmlFor="overview-participant-input">Participantes</label>
+              <label htmlFor="overview-participant-input">Participantes por email</label>
 
               <div className="trip-participants-editor">
                 <div className="trip-participants-editor__list">
@@ -1018,8 +1018,8 @@ export function TripDetailsPage() {
                 <div className="trip-participants-editor__add-row">
                   <input
                     id="overview-participant-input"
-                    type="text"
-                    placeholder="ID do usuario"
+                    type="email"
+                    placeholder="email@exemplo.com"
                     value={participantInput}
                     onChange={(event) => setParticipantInput(event.target.value)}
                   />
