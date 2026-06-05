@@ -12,6 +12,7 @@ import {
   type DashboardTrip,
   type TripStatus,
 } from "../../services/tripService";
+import { getUserByEmailRequest } from "../../services/userService";
 import "../../styles/trips-page.css";
 
 const TAB_OPTIONS: { label: string; value: TripStatus }[] = [
@@ -131,6 +132,26 @@ export function TripsPage() {
     try {
       setError(null);
 
+      const participantEmails = Array.from(
+        new Set(
+          newTripForm.participants
+            .map((participant) => participant.trim().toLowerCase())
+            .filter(Boolean),
+        ),
+      );
+
+      const resolvedParticipants = await Promise.all(
+        participantEmails.map((email) => getUserByEmailRequest(email)),
+      );
+
+      const participantIds = Array.from(
+        new Set(
+          resolvedParticipants
+            .map((participant) => participant.id)
+            .filter((participantId) => participantId !== user.id),
+        ),
+      );
+
       const createdTrip = await createTripRequest({
         owner_id: user.id,
         destination: newTripForm.destination.trim(),
@@ -139,14 +160,6 @@ export function TripsPage() {
         return_date: newTripForm.endDate,
         budget: 0,
       });
-
-      const participantIds = Array.from(
-        new Set(
-          newTripForm.participants
-            .map((participant) => participant.trim())
-            .filter((participant) => participant && participant !== user.id),
-        ),
-      );
 
       const participantResults = await Promise.allSettled(
         participantIds.map((participantId) =>
@@ -164,7 +177,7 @@ export function TripsPage() {
 
       if (failedParticipants.length > 0) {
         setError(
-          "Viagem criada, mas um ou mais participantes nao puderam ser adicionados. Confirme se os IDs informados existem.",
+          "Viagem criada, mas um ou mais participantes nao puderam ser adicionados. Confirme se os emails informados existem.",
         );
       }
 
@@ -181,9 +194,14 @@ export function TripsPage() {
   }
 
   function handleAddParticipant() {
-    const trimmedName = newParticipantName.trim();
+    const trimmedName = newParticipantName.trim().toLowerCase();
 
     if (!trimmedName) {
+      return;
+    }
+
+    if (newTripForm.participants.includes(trimmedName)) {
+      setNewParticipantName("");
       return;
     }
 
@@ -368,7 +386,7 @@ export function TripsPage() {
             </div>
 
             <div className="modal-form__row">
-              <label htmlFor="trip-participant-name">Participantes</label>
+              <label htmlFor="trip-participant-name">Participantes por email</label>
 
               <div className="trip-participants-editor">
                 <div className="trip-participants-editor__list">
@@ -400,8 +418,8 @@ export function TripsPage() {
                 <div className="trip-participants-editor__add-row">
                   <input
                     id="trip-participant-name"
-                    type="text"
-                    placeholder="ID do usuario"
+                    type="email"
+                    placeholder="email@exemplo.com"
                     value={newParticipantName}
                     onChange={(event) => setNewParticipantName(event.target.value)}
                   />
