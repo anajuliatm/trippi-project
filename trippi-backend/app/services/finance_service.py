@@ -3,12 +3,12 @@ from decimal import Decimal, ROUND_DOWN
 from uuid import UUID
 
 from fastapi import HTTPException, status
-from sqlalchemy import delete, func, select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models.finance import Finance
-from app.models.payment import Payment
+from app.models.itinerary import Itinerary
 from app.models.trip import Trip
 from app.models.trip_member import TripMember
 from app.models.user import User
@@ -17,11 +17,12 @@ from app.schemas.finance import (
     FinanceUpdate,
     TripFinanceSummaryResponse,
     TripParticipantBalanceResponse,
+    TripSettlementResponse,
 )
 
 EXPENSE_TYPE = "expense"
 CENT = Decimal("0.01")
-AUTO_PAYMENT_NOTE_PREFIX = "Auto-generated from finance "
+ITINERARY_FINANCE_PREFIX = "[itinerary-expense:"
 
 
 @dataclass(frozen=True)
@@ -33,13 +34,6 @@ class TripParticipantFinancial:
 
 
 @dataclass(frozen=True)
-class ExpensePaymentAllocation:
-    finance_id: UUID
-    payer_user_id: UUID
-    debtor_amounts: tuple[tuple[UUID, Decimal], ...]
-
-
-@dataclass(frozen=True)
 class TripFinancialSnapshot:
     trip: Trip
     budget: Decimal
@@ -47,7 +41,6 @@ class TripFinancialSnapshot:
     total_expenses: Decimal
     remaining_budget: Decimal
     participants: tuple[TripParticipantFinancial, ...]
-    payment_allocations: tuple[ExpensePaymentAllocation, ...]
 
 
 def create_finance_entry(
@@ -69,9 +62,6 @@ def create_finance_entry(
             _get_trip_or_404(db=db, trip_id=entry.trip_id)
             db.add(finance)
             db.flush()
-
-            if finance.type == EXPENSE_TYPE:
-                recalculate_trip_payments(db=db, trip_id=finance.trip_id)
     except IntegrityError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -121,7 +111,6 @@ def update_finance_entry(
                 trip_id=trip_id,
                 user_id=user_id,
             )
-            previous_type = finance.type
 
             if finance_data.type is not None:
                 finance.type = finance_data.type
@@ -131,9 +120,6 @@ def update_finance_entry(
 
             if finance_data.amount is not None:
                 finance.amount = Decimal(str(finance_data.amount)).quantize(CENT)
-
-            if previous_type == EXPENSE_TYPE or finance.type == EXPENSE_TYPE:
-                recalculate_trip_payments(db=db, trip_id=finance.trip_id)
     except IntegrityError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -163,16 +149,108 @@ def delete_finance_entry(
             trip_id=trip_id,
             user_id=user_id,
         )
-        was_expense = finance.type == EXPENSE_TYPE
-        current_trip_id = finance.trip_id
         db.delete(finance)
 
-        if was_expense:
-            recalculate_trip_payments(db=db, trip_id=current_trip_id)
-        else:
-            _delete_auto_generated_payments(db=db, finance_id=finance.id)
-
     return {"message": "Lançamento deletado"}
+
+
+def sync_itinerary_expense(
+    db: Session,
+    itinerary: Itinerary,
+    fallback_user_id: UUID,
+) -> Finance | None:
+    description = build_itinerary_finance_description(
+        itinerary_id=itinerary.id,
+        title=itinerary.title,
+    )
+    finance_entries = _get_itinerary_finance_entries(
+        db=db,
+        trip_id=itinerary.trip_id,
+        itinerary_id=itinerary.id,
+    )
+    finance_entry = finance_entries[0] if finance_entries else None
+
+    for duplicate_entry in finance_entries[1:]:
+        db.delete(duplicate_entry)
+
+    amount = _quantize(_to_decimal(itinerary.estimated_cost))
+
+    if amount < CENT:
+        if finance_entry is not None:
+            db.delete(finance_entry)
+        return None
+
+    if finance_entry is None:
+        finance_entry = Finance(
+            trip_id=itinerary.trip_id,
+            user_id=fallback_user_id,
+            type=EXPENSE_TYPE,
+            description=description,
+            amount=amount,
+        )
+        db.add(finance_entry)
+        db.flush()
+        return finance_entry
+
+    finance_entry.type = EXPENSE_TYPE
+    finance_entry.description = description
+    finance_entry.amount = amount
+    db.flush()
+    return finance_entry
+
+
+def delete_itinerary_expense(
+    db: Session,
+    trip_id: str | UUID,
+    itinerary_id: str | UUID,
+) -> None:
+    finance_entries = _get_itinerary_finance_entries(
+        db=db,
+        trip_id=trip_id,
+        itinerary_id=itinerary_id,
+    )
+
+    for finance_entry in finance_entries:
+        db.delete(finance_entry)
+
+
+def sync_trip_itinerary_expenses(
+    db: Session,
+    trip_id: str | UUID,
+    fallback_user_id: UUID,
+) -> None:
+    statement = (
+        select(Itinerary)
+        .where(Itinerary.trip_id == trip_id)
+        .order_by(Itinerary.created_at.asc(), Itinerary.id.asc())
+    )
+    itinerary_entries = db.execute(statement).scalars().all()
+
+    for itinerary in itinerary_entries:
+        sync_itinerary_expense(
+            db=db,
+            itinerary=itinerary,
+            fallback_user_id=fallback_user_id,
+        )
+
+
+def build_itinerary_finance_description(
+    itinerary_id: str | UUID,
+    title: str,
+) -> str:
+    safe_title = title.strip() or "Atividade do roteiro"
+    return f"{ITINERARY_FINANCE_PREFIX}{itinerary_id}] {safe_title}"
+
+
+def parse_itinerary_finance_description(description: str | None) -> str | None:
+    if not description or not description.startswith(ITINERARY_FINANCE_PREFIX):
+        return description
+
+    marker_end = description.find("] ")
+    if marker_end == -1:
+        return description
+
+    return description[marker_end + 2 :]
 
 
 def get_trip_summary(db: Session, trip_id: str | UUID) -> TripFinanceSummaryResponse:
@@ -199,6 +277,85 @@ def get_trip_balances(db: Session, trip_id: str) -> list[TripParticipantBalanceR
         )
         for participant in snapshot.participants
     ]
+
+
+def get_trip_settlements(db: Session, trip_id: str) -> list[TripSettlementResponse]:
+    snapshot = calculate_trip_financials(db=db, trip_id=trip_id)
+    creditors: list[dict[str, UUID | str | Decimal]] = []
+    debtors: list[dict[str, UUID | str | Decimal]] = []
+
+    for participant in snapshot.participants:
+        balance = _quantize(participant.paid - participant.should_pay)
+
+        if balance >= CENT:
+            creditors.append(
+                {
+                    "user_id": participant.user_id,
+                    "username": participant.username,
+                    "amount": balance,
+                }
+            )
+            continue
+
+        if balance <= -CENT:
+            debtors.append(
+                {
+                    "user_id": participant.user_id,
+                    "username": participant.username,
+                    "amount": _quantize(-balance),
+                }
+            )
+
+    creditors.sort(
+        key=lambda participant: (
+            -Decimal(participant["amount"]),
+            str(participant["user_id"]),
+        )
+    )
+    debtors.sort(
+        key=lambda participant: (
+            -Decimal(participant["amount"]),
+            str(participant["user_id"]),
+        )
+    )
+
+    settlements: list[TripSettlementResponse] = []
+    creditor_index = 0
+    debtor_index = 0
+
+    while debtor_index < len(debtors) and creditor_index < len(creditors):
+        debtor = debtors[debtor_index]
+        creditor = creditors[creditor_index]
+        amount = _quantize(
+            min(
+                Decimal(debtor["amount"]),
+                Decimal(creditor["amount"]),
+            )
+        )
+
+        if amount < CENT:
+            break
+
+        settlements.append(
+            TripSettlementResponse(
+                from_user_id=UUID(str(debtor["user_id"])),
+                from_username=str(debtor["username"]),
+                to_user_id=UUID(str(creditor["user_id"])),
+                to_username=str(creditor["username"]),
+                amount=amount,
+            )
+        )
+
+        debtor["amount"] = _quantize(Decimal(debtor["amount"]) - amount)
+        creditor["amount"] = _quantize(Decimal(creditor["amount"]) - amount)
+
+        if Decimal(debtor["amount"]) < CENT:
+            debtor_index += 1
+
+        if Decimal(creditor["amount"]) < CENT:
+            creditor_index += 1
+
+    return settlements
 
 
 def calculate_trip_financials(db: Session, trip_id: str | UUID) -> TripFinancialSnapshot:
@@ -244,7 +401,6 @@ def calculate_trip_financials(db: Session, trip_id: str | UUID) -> TripFinancial
         .order_by(Finance.created_at.asc(), Finance.id.asc())
     )
 
-    payment_allocations: list[ExpensePaymentAllocation] = []
     for expense in db.execute(expense_statement):
         if expense.user_id not in paid_by_user:
             raise HTTPException(
@@ -256,20 +412,9 @@ def calculate_trip_financials(db: Session, trip_id: str | UUID) -> TripFinancial
             total_amount=_to_decimal(expense.amount),
             parts=participant_count,
         )
-        debtor_amounts: list[tuple[UUID, Decimal]] = []
 
         for participant_id, share in zip(participant_ids, shares):
             should_pay_by_user[participant_id] += share
-            if participant_id != expense.user_id and share > 0:
-                debtor_amounts.append((participant_id, share))
-
-        payment_allocations.append(
-            ExpensePaymentAllocation(
-                finance_id=expense.id,
-                payer_user_id=expense.user_id,
-                debtor_amounts=tuple(debtor_amounts),
-            )
-        )
 
     participants = tuple(
         TripParticipantFinancial(
@@ -291,40 +436,6 @@ def calculate_trip_financials(db: Session, trip_id: str | UUID) -> TripFinancial
         total_expenses=_quantize(total_expenses),
         remaining_budget=_quantize(budget - total_expenses),
         participants=participants,
-        payment_allocations=tuple(payment_allocations),
-    )
-
-
-def recalculate_trip_payments(db: Session, trip_id: str | UUID) -> None:
-    snapshot = calculate_trip_financials(db=db, trip_id=trip_id)
-    _delete_auto_generated_trip_payments(db=db, trip_id=snapshot.trip.id)
-
-    for allocation in snapshot.payment_allocations:
-        note = _build_auto_payment_note(allocation.finance_id)
-        for debtor_id, amount in allocation.debtor_amounts:
-            db.add(
-                Payment(
-                    trip_id=snapshot.trip.id,
-                    from_user_id=debtor_id,
-                    to_user_id=allocation.payer_user_id,
-                    amount=amount,
-                    note=note,
-                )
-            )
-
-
-def _delete_auto_generated_payments(db: Session, finance_id: UUID) -> None:
-    db.execute(
-        delete(Payment).where(Payment.note == _build_auto_payment_note(finance_id))
-    )
-
-
-def _delete_auto_generated_trip_payments(db: Session, trip_id: UUID) -> None:
-    db.execute(
-        delete(Payment).where(
-            Payment.trip_id == trip_id,
-            Payment.note.like(f"{AUTO_PAYMENT_NOTE_PREFIX}%"),
-        )
     )
 
 
@@ -349,6 +460,23 @@ def _get_finance_or_404(
     return finance
 
 
+def _get_itinerary_finance_entries(
+    db: Session,
+    trip_id: str | UUID,
+    itinerary_id: str | UUID,
+) -> list[Finance]:
+    description_prefix = f"{ITINERARY_FINANCE_PREFIX}{itinerary_id}]"
+    statement = (
+        select(Finance)
+        .where(
+            Finance.trip_id == trip_id,
+            Finance.description.like(f"{description_prefix}%"),
+        )
+        .order_by(Finance.created_at.asc(), Finance.id.asc())
+    )
+    return list(db.execute(statement).scalars().all())
+
+
 def _get_trip_or_404(db: Session, trip_id: str | UUID) -> Trip:
     statement = select(Trip).where(Trip.id == trip_id)
     trip = db.execute(statement).scalar_one_or_none()
@@ -369,10 +497,6 @@ def _get_trip_participant_rows(db: Session, trip_id: UUID) -> list:
         .order_by(User.username.asc(), User.id.asc())
     )
     return list(db.execute(statement).all())
-
-
-def _build_auto_payment_note(finance_id: UUID) -> str:
-    return f"{AUTO_PAYMENT_NOTE_PREFIX}{finance_id}"
 
 
 def _split_amount_evenly(total_amount: Decimal, parts: int) -> list[Decimal]:

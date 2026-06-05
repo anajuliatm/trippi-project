@@ -1,4 +1,6 @@
+from datetime import date
 from decimal import Decimal
+from uuid import UUID
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
@@ -21,6 +23,7 @@ def create_trip(db: Session, trip_data: TripCreate) -> Trip:
         image_url=trip_data.image_url,
         departure_date=trip_data.departure_date,
         return_date=trip_data.return_date,
+        is_active=_is_trip_active(trip_data.return_date),
         budget=trip_data.budget,
     )
 
@@ -54,11 +57,21 @@ def list_trips(db: Session, user_id: str) -> list[Trip]:
         .where(TripMember.user_id == user_id)
         .order_by(Trip.departure_date.asc(), Trip.created_at.desc())
     )
-    return list(db.execute(statement).scalars().all())
+    trips = list(db.execute(statement).scalars().all())
+
+    if _sync_trip_statuses(db=db, trips=trips):
+        db.commit()
+
+    return trips
 
 
 def get_trip_by_id(db: Session, trip_id: str, user_id: str) -> Trip:
-    return _get_trip_or_404_for_user(db=db, trip_id=trip_id, user_id=user_id)
+    trip = _get_trip_or_404_for_user(db=db, trip_id=trip_id, user_id=user_id)
+
+    if _sync_trip_status(trip):
+        db.commit()
+
+    return trip
 
 
 def update_trip(
@@ -90,8 +103,7 @@ def update_trip(
         if trip_data.return_date is not None:
             trip.return_date = trip_data.return_date
 
-        if trip_data.is_active is not None:
-            trip.is_active = trip_data.is_active
+        trip.is_active = _is_trip_active(trip.return_date)
 
         if trip_data.budget is not None:
             trip.budget = Decimal(str(trip_data.budget)).quantize(CENT)
@@ -142,6 +154,11 @@ def get_trip_summary(
     user_id: str,
 ) -> TripFinanceSummaryResponse:
     _get_trip_or_404_for_user(db=db, trip_id=trip_id, user_id=user_id)
+    finance_service.sync_trip_itinerary_expenses(
+        db=db,
+        trip_id=trip_id,
+        fallback_user_id=UUID(user_id),
+    )
     return finance_service.get_trip_summary(db=db, trip_id=trip_id)
 
 
@@ -187,3 +204,26 @@ def _quantize(value: Decimal) -> Decimal:
 
 def _to_decimal(value: Decimal | int | float) -> Decimal:
     return Decimal(str(value))
+
+
+def _is_trip_active(return_date: date) -> bool:
+    return return_date >= date.today()
+
+
+def _sync_trip_status(trip: Trip) -> bool:
+    next_status = _is_trip_active(trip.return_date)
+
+    if trip.is_active == next_status:
+        return False
+
+    trip.is_active = next_status
+    return True
+
+
+def _sync_trip_statuses(db: Session, trips: list[Trip]) -> bool:
+    changed = False
+
+    for trip in trips:
+        changed = _sync_trip_status(trip) or changed
+
+    return changed

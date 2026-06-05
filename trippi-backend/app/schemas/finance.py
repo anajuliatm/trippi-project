@@ -37,6 +37,14 @@ class TripParticipantBalanceResponse(BaseModel):
     balance: Decimal
 
 
+class TripSettlementResponse(BaseModel):
+    from_user_id: UUID
+    from_username: str
+    to_user_id: UUID
+    to_username: str
+    amount: Decimal
+
+
 class TripFinanceSummaryResponse(BaseModel):
     trip_id: UUID
     participants: int

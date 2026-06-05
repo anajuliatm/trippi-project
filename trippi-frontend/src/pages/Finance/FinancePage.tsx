@@ -1,20 +1,14 @@
 import { motion } from "framer-motion";
-import {
-  ArrowDownLeft,
-  ArrowUpRight,
-  PiggyBank,
-  ReceiptText,
-  Users,
-} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { MainLayout } from "../../layouts/MainLayout";
-import { getTripPaymentsRequest, type PaymentEntry } from "../../services/paymentService";
 import {
   getDashboardTripsRequest,
   getTripBalancesRequest,
+  getTripSettlementsRequest,
   type DashboardTrip,
   type TripParticipantBalance,
+  type TripSettlement,
 } from "../../services/tripService";
 import "../../styles/finance-page.css";
 
@@ -40,11 +34,20 @@ type SettlementView = {
   fromName: string;
   toName: string;
   amount: number;
-  note: string;
+};
+
+type TripSettlementGroupView = {
+  id: string;
+  tripId: string;
+  destination: string;
+  direction: "incoming" | "outgoing";
+  totalAmount: number;
+  counterparties: number;
+  amountPerPerson: number;
 };
 
 const TAB_LABELS: Record<FinanceTab, string> = {
-  summary: "Resumo pessoal",
+  summary: "Resumo por Viagem",
   settlements: "Acertos",
 };
 
@@ -53,6 +56,10 @@ function formatCurrency(value: number) {
     style: "currency",
     currency: "BRL",
   }).format(value);
+}
+
+function roundCurrency(value: number) {
+  return Math.round(value * 100) / 100;
 }
 
 function getSignedLabel(value: number) {
@@ -65,18 +72,6 @@ function getSignedLabel(value: number) {
   }
 
   return "Equilibrado";
-}
-
-function formatSettlementNote(note: string | null) {
-  if (!note) {
-    return "Acerto pendente";
-  }
-
-  if (note.startsWith("Auto-generated from finance ")) {
-    return "Acerto automatico da viagem";
-  }
-
-  return note;
 }
 
 export function FinancePage() {
@@ -102,12 +97,12 @@ export function FinancePage() {
 
         const tripData = await Promise.all(
           activeTrips.map(async (trip) => {
-            const [balances, payments] = await Promise.all([
+            const [balances, settlements] = await Promise.all([
               getTripBalancesRequest(trip.id),
-              getTripPaymentsRequest(trip.id),
+              getTripSettlementsRequest(trip.id),
             ]);
 
-            return { trip, balances, payments };
+            return { trip, balances, settlements };
           }),
         );
 
@@ -115,10 +110,8 @@ export function FinancePage() {
           mapTripSummary(trip, balances, user!.id),
         );
 
-        const usernameMap = buildUsernameMap(tripData.flatMap((item) => item.balances));
-
-        const nextSettlements = tripData.flatMap(({ trip, payments }) =>
-          mapTripSettlements(payments, trip, user!.id, usernameMap),
+        const nextSettlements = tripData.flatMap(({ trip, settlements }) =>
+          mapTripSettlements(settlements, trip, user!.id),
         );
 
         setTripSummaries(nextSummaries);
@@ -137,34 +130,10 @@ export function FinancePage() {
     void loadFinance();
   }, [user]);
 
-  const totals = useMemo(() => {
-    const totalBudget = tripSummaries.reduce((total, trip) => total + trip.budget, 0);
-    const totalSpent = tripSummaries.reduce((total, trip) => total + trip.spent, 0);
-    const totalMyPaid = tripSummaries.reduce((total, trip) => total + trip.myPaid, 0);
-    const totalMyShouldPay = tripSummaries.reduce(
-      (total, trip) => total + trip.myShouldPay,
-      0,
-    );
-    const myBalance = tripSummaries.reduce((total, trip) => total + trip.balance, 0);
-
-    const myIncoming = settlements
-      .filter((settlement) => settlement.toUserId === user?.id)
-      .reduce((total, settlement) => total + settlement.amount, 0);
-
-    const myOutgoing = settlements
-      .filter((settlement) => settlement.fromUserId === user?.id)
-      .reduce((total, settlement) => total + settlement.amount, 0);
-
-    return {
-      totalBudget,
-      totalSpent,
-      totalMyPaid,
-      totalMyShouldPay,
-      myBalance,
-      myIncoming,
-      myOutgoing,
-    };
-  }, [settlements, tripSummaries, user?.id]);
+  const groupedSettlements = useMemo(
+    () => groupSettlementsByTrip(settlements, user?.id ?? ""),
+    [settlements, user?.id],
+  );
 
   if (loading) {
     return (
@@ -203,31 +172,6 @@ export function FinancePage() {
         <header className="finance-page__header">
           <h1>Financeiro</h1>
         </header>
-
-        <section className="finance-kpis">
-          <article className="finance-kpi-card">
-            <span>
-              <PiggyBank size={16} /> Voce pagou
-            </span>
-            <strong>{formatCurrency(totals.totalMyPaid)}</strong>
-          </article>
-
-          <article className="finance-kpi-card">
-            <span>
-              <ReceiptText size={16} /> A pagar
-            </span>
-            <strong>{formatCurrency(totals.totalMyShouldPay)}</strong>
-          </article>
-
-          <article className="finance-kpi-card">
-            <span>
-              <Users size={16} /> Seu saldo geral
-            </span>
-            <strong className={totals.myBalance >= 0 ? "is-positive" : "is-negative"}>
-              {formatCurrency(totals.myBalance)}
-            </strong>
-          </article>
-        </section>
 
         <div className="finance-tabs" role="tablist" aria-label="Abas da pagina financeiro">
           {(Object.keys(TAB_LABELS) as FinanceTab[]).map((tab) => (
@@ -271,31 +215,19 @@ export function FinancePage() {
                     <strong>{formatCurrency(trip.spent)}</strong>
                   </p>
                   <p>
-                    Você pagou
-                    <strong>{formatCurrency(trip.myPaid)}</strong>
-                  </p>
-                  <p>
-                    A pagar
+                    Sua parte
                     <strong>{formatCurrency(trip.myShouldPay)}</strong>
                   </p>
                 </div>
 
                 <footer className="finance-trip-card__footer">
                   <span>{trip.participants} participantes</span>
-                  <strong className={trip.balance >= 0 ? "is-positive" : "is-negative"}>
-                    {formatCurrency(Math.abs(trip.balance))}
-                  </strong>
                 </footer>
               </motion.article>
             ))}
           </section>
         ) : (
-          <SettlementsTab
-            settlements={settlements}
-            incoming={totals.myIncoming}
-            outgoing={totals.myOutgoing}
-            currentUserId={user?.id ?? ""}
-          />
+          <SettlementsTab settlements={groupedSettlements} />
         )}
       </div>
     </MainLayout>
@@ -321,92 +253,87 @@ function mapTripSummary(
   };
 }
 
-function buildUsernameMap(balances: TripParticipantBalance[]) {
-  return balances.reduce<Record<string, string>>((accumulator, balance) => {
-    accumulator[balance.user_id] = balance.username;
-    return accumulator;
-  }, {});
-}
-
 function mapTripSettlements(
-  payments: PaymentEntry[],
+  settlements: TripSettlement[],
   trip: DashboardTrip,
   currentUserId: string,
-  usernameMap: Record<string, string>,
 ): SettlementView[] {
-  return payments
+  return settlements
     .filter(
-      (payment) =>
-        payment.status !== "settled" &&
-        (payment.from_user_id === currentUserId || payment.to_user_id === currentUserId),
+      (settlement) =>
+        settlement.from_user_id === currentUserId || settlement.to_user_id === currentUserId,
     )
-    .map((payment) => ({
-      id: payment.id,
+    .map((settlement, index) => ({
+      id: `${trip.id}:${settlement.from_user_id}:${settlement.to_user_id}:${index}`,
       tripId: trip.id,
       destination: trip.destination,
-      fromUserId: payment.from_user_id,
-      toUserId: payment.to_user_id,
-      fromName: usernameMap[payment.from_user_id] ?? "Participante",
-      toName: usernameMap[payment.to_user_id] ?? "Participante",
-      amount: Number(payment.amount),
-      note: formatSettlementNote(payment.note),
+      fromUserId: settlement.from_user_id,
+      toUserId: settlement.to_user_id,
+      fromName: settlement.from_username,
+      toName: settlement.to_username,
+      amount: Number(settlement.amount),
     }));
+}
+
+function groupSettlementsByTrip(
+  settlements: SettlementView[],
+  currentUserId: string,
+): TripSettlementGroupView[] {
+  const grouped = new Map<string, TripSettlementGroupView>();
+
+  for (const settlement of settlements) {
+    const isIncoming = settlement.toUserId === currentUserId;
+    const direction = isIncoming ? "incoming" : "outgoing";
+    const key = `${settlement.tripId}:${direction}`;
+    const currentGroup = grouped.get(key);
+
+    if (currentGroup) {
+      currentGroup.totalAmount += settlement.amount;
+      currentGroup.counterparties += 1;
+      currentGroup.amountPerPerson = roundCurrency(
+        currentGroup.totalAmount / currentGroup.counterparties,
+      );
+      continue;
+    }
+
+    grouped.set(key, {
+      id: key,
+      tripId: settlement.tripId,
+      destination: settlement.destination,
+      direction,
+      totalAmount: settlement.amount,
+      counterparties: 1,
+      amountPerPerson: roundCurrency(settlement.amount),
+    });
+  }
+
+  return Array.from(grouped.values());
 }
 
 function SettlementsTab({
   settlements,
-  incoming,
-  outgoing,
-  currentUserId,
 }: {
-  settlements: SettlementView[];
-  incoming: number;
-  outgoing: number;
-  currentUserId: string;
+  settlements: TripSettlementGroupView[];
 }) {
   return (
     <section className="settlements-section">
-      <div className="settlements-summary">
-        <article>
-          <span>
-            <ArrowDownLeft size={15} /> A receber
-          </span>
-          <strong>{formatCurrency(incoming)}</strong>
-        </article>
-        <article>
-          <span>
-            <ArrowUpRight size={15} /> A pagar
-          </span>
-          <strong>{formatCurrency(outgoing)}</strong>
-        </article>
-      </div>
-
       <div className="settlement-list">
         {settlements.length === 0 ? (
           <div className="settlement-empty">
-            <h3>Sem acertos pendentes nas viagens ativas.</h3>
+            <h3>Sem sugestoes de acerto nas viagens ativas.</h3>
           </div>
         ) : (
           settlements.map((settlement) => {
-            const isIncoming = settlement.toUserId === currentUserId;
-            const isOutgoing = settlement.fromUserId === currentUserId;
-
             return (
               <article key={settlement.id} className="settlement-item">
-                <header>
-                  <h3>{settlement.destination}</h3>
-                  <strong className={isIncoming ? "is-positive" : isOutgoing ? "is-negative" : ""}>
-                    {formatCurrency(settlement.amount)}
+                <p className="settlement-item__summary">
+                  <span className="settlement-item__destination">{settlement.destination}</span>
+                  <span className="settlement-item__divider">|</span>
+                  <span>Valor por pessoa:</span>
+                  <strong className="settlement-item__value">
+                    {formatCurrency(settlement.amountPerPerson)}
                   </strong>
-                </header>
-
-                <p>
-                  <span>{settlement.fromName}</span>
-                  <ArrowUpRight size={13} />
-                  <span>{settlement.toName}</span>
                 </p>
-
-                <small>{settlement.note}</small>
               </article>
             );
           })

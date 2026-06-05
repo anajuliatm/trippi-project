@@ -32,6 +32,8 @@ import {
 import { getUserByEmailRequest, getUsersMapRequest } from "../../services/userService";
 import "../../styles/trip-details.css";
 
+const ITINERARY_FINANCE_PREFIX = "[itinerary-expense:";
+
 function formatDate(date: string) {
   return new Intl.DateTimeFormat("pt-BR", {
     day: "2-digit",
@@ -66,6 +68,24 @@ function getTripDateRange(startDate: string, endDate: string) {
   }
 
   return dates;
+}
+
+function getFinanceEntryDescription(description: string | null) {
+  if (!description) {
+    return "Lancamento sem descricao";
+  }
+
+  if (!description.startsWith(ITINERARY_FINANCE_PREFIX)) {
+    return description;
+  }
+
+  const markerEnd = description.indexOf("] ");
+
+  if (markerEnd === -1) {
+    return description;
+  }
+
+  return description.slice(markerEnd + 2) || "Atividade do roteiro";
 }
 
 type DetailTab = "overview" | "finance" | "itinerary";
@@ -383,7 +403,7 @@ function ItineraryTabs({
           transition={{ duration: 0.25, ease: "easeOut" }}
         >
           {activeDay && activeDay.activities.length > 0 ? (
-            activeDay.activities.map((activity, activityIndex) => (
+            activeDay.activities.map((activity) => (
               <article key={activity.id} className="trip-activity">
                 <div className="trip-activity__time">
                   <Clock3 size={16} />
@@ -542,10 +562,18 @@ export function TripDetailsPage() {
     return getTripDateRange(tripData.departureDate, tripData.endDate);
   }, [tripData]);
 
-  const budgetPreview = useMemo(() => {
+  const budgetAdjustment = useMemo(() => {
     const parsedValue = Number(budgetDraftValue);
-    return Number.isNaN(parsedValue) ? 0 : Math.max(parsedValue, 0);
+    return Number.isNaN(parsedValue) ? 0 : parsedValue;
   }, [budgetDraftValue]);
+
+  const budgetPreview = useMemo(() => {
+    if (!tripData) {
+      return 0;
+    }
+
+    return Math.max(tripData.budget + budgetAdjustment, 0);
+  }, [budgetAdjustment, tripData]);
 
   function openOverviewEditModal() {
     if (!tripData) {
@@ -674,7 +702,7 @@ export function TripDetailsPage() {
       return;
     }
 
-    setBudgetDraftValue(String(tripData.budget));
+    setBudgetDraftValue("0");
     setIsBudgetEditOpen(true);
   }
 
@@ -1081,7 +1109,6 @@ export function TripDetailsPage() {
                 id="budget-total"
                 type="number"
                 step="0.01"
-                min={0}
                 value={budgetDraftValue}
                 onChange={(event) => setBudgetDraftValue(event.target.value)}
               />
@@ -1093,7 +1120,7 @@ export function TripDetailsPage() {
                   key={`plus-${quickValue}`}
                   type="button"
                   className="modal-btn"
-                  onClick={() => setBudgetDraftValue(String(budgetPreview + quickValue))}
+                  onClick={() => setBudgetDraftValue(String(budgetAdjustment + quickValue))}
                 >
                   + {formatCurrency(quickValue)}
                 </button>
@@ -1104,11 +1131,16 @@ export function TripDetailsPage() {
                   key={`minus-${quickValue}`}
                   type="button"
                   className="modal-btn"
-                  onClick={() => setBudgetDraftValue(String(Math.max(budgetPreview - quickValue, 0)))}
+                  onClick={() => setBudgetDraftValue(String(budgetAdjustment - quickValue))}
                 >
                   - {formatCurrency(quickValue)}
                 </button>
               ))}
+            </div>
+
+            <div className="trip-budget-preview trip-budget-preview--final">
+              <p>Ajuste aplicado</p>
+              <strong>{formatSignedCurrency(budgetAdjustment)}</strong>
             </div>
 
             <div className="trip-budget-preview trip-budget-preview--final">
@@ -1322,7 +1354,7 @@ function mapFinances(
     userId: finance.user_id,
     username: userMap[finance.user_id]?.username ?? finance.user_id,
     type: finance.type,
-    description: finance.description ?? "Lancamento sem descricao",
+    description: getFinanceEntryDescription(finance.description),
     amount: Number(finance.amount),
   }));
 }

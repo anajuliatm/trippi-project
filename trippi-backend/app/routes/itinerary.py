@@ -1,13 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException, Path
 from sqlalchemy.orm import Session
 
-from app.dependencies import get_db
+from app.dependencies import get_current_user, get_db
 from app.models.itinerary import Itinerary
+from app.models.user import User
 from app.schemas.itinerary import (
     ItineraryCreate,
     ItineraryUpdate,
     ItineraryResponse
 )
+from app.services import finance_service, trip_service
 
 router = APIRouter(
     prefix="/itinerary",
@@ -23,6 +25,7 @@ router = APIRouter(
 def create_activity(
     activity: ItineraryCreate,
     trip_id: str = Path(..., description="ID da viagem"),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
 
@@ -34,7 +37,14 @@ def create_activity(
 
     new_activity = Itinerary(**activity.model_dump())
 
+    trip_service.ensure_trip_access(db=db, trip_id=trip_id, user_id=str(current_user.id))
     db.add(new_activity)
+    db.flush()
+    finance_service.sync_itinerary_expense(
+        db=db,
+        itinerary=new_activity,
+        fallback_user_id=current_user.id,
+    )
 
     db.commit()
 
@@ -51,8 +61,10 @@ def create_activity(
 )
 def get_trip_itinerary(
     trip_id: str = Path(..., description="ID da viagem"),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    trip_service.ensure_trip_access(db=db, trip_id=trip_id, user_id=str(current_user.id))
 
     activities = (
         db.query(Itinerary)
@@ -72,8 +84,10 @@ def get_trip_itinerary(
 def get_activity_by_trip_and_id(
     trip_id: str = Path(..., description="ID da viagem"),
     activity_id: str = Path(..., description="ID da atividade"),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    trip_service.ensure_trip_access(db=db, trip_id=trip_id, user_id=str(current_user.id))
     activity = (
         db.query(Itinerary)
         .filter(
@@ -101,8 +115,10 @@ def update_activity(
     activity_data: ItineraryUpdate,
     trip_id: str = Path(..., description="ID da viagem"),
     activity_id: str = Path(..., description="ID da atividade"),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    trip_service.ensure_trip_access(db=db, trip_id=trip_id, user_id=str(current_user.id))
 
     activity = (
         db.query(Itinerary)
@@ -140,6 +156,12 @@ def update_activity(
     if activity_data.estimated_cost is not None:
         activity.estimated_cost = activity_data.estimated_cost
 
+    finance_service.sync_itinerary_expense(
+        db=db,
+        itinerary=activity,
+        fallback_user_id=current_user.id,
+    )
+
     db.commit()
 
     db.refresh(activity)
@@ -154,8 +176,10 @@ def update_activity(
 def delete_activity(
     trip_id: str = Path(..., description="ID da viagem"),
     activity_id: str = Path(..., description="ID da atividade"),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    trip_service.ensure_trip_access(db=db, trip_id=trip_id, user_id=str(current_user.id))
 
     activity = (
         db.query(Itinerary)
@@ -173,6 +197,11 @@ def delete_activity(
         )
 
     db.delete(activity)
+    finance_service.delete_itinerary_expense(
+        db=db,
+        trip_id=trip_id,
+        itinerary_id=activity_id,
+    )
 
     db.commit()
 

@@ -72,7 +72,7 @@
 
 .finance-summary-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 360px));
   gap: 16px;
 }
 
@@ -107,8 +107,8 @@
 
 .finance-trip-card__grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  grid-template-columns: 1fr;
+  gap: 16px;
 }
 
 .finance-trip-card__grid p {
@@ -116,6 +116,8 @@
   gap: 4px;
   color: rgba(226, 232, 240, 0.72);
   font-size: 13px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
 }
 
 .finance-trip-card__grid p strong {
@@ -126,7 +128,7 @@
 .finance-trip-card__footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   border-top: 1px solid rgba(148, 163, 184, 0.2);
   padding-top: 12px;
 }
@@ -177,25 +179,31 @@
   border: 1px solid rgba(148, 163, 184, 0.23);
   background: rgba(8, 20, 36, 0.92);
   padding: 14px;
-  display: grid;
-  gap: 10px;
+  display: block;
 }
 
-.settlement-item header {
+.settlement-item__summary {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.settlement-item p {
-  display: inline-flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  color: rgba(191, 219, 254, 0.88);
+  color: rgba(226, 232, 240, 0.88);
+  font-size: 16px;
 }
 
-.settlement-item small {
-  color: rgba(226, 232, 240, 0.66);
+.settlement-item__destination {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.settlement-item__value {
+  color: #86efac;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.settlement-item__divider {
+  color: rgba(148, 163, 184, 0.7);
 }
 
 .settlement-empty {
