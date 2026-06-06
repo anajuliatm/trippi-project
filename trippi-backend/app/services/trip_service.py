@@ -85,12 +85,6 @@ def update_trip(
     try:
         trip = _get_trip_or_404_for_user(db=db, trip_id=trip_id, user_id=user_id)
 
-        if str(trip.owner_id) != user_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Apenas o dono da viagem pode atualiza-la",
-            )
-
         if trip_data.destination is not None:
             trip.destination = trip_data.destination
 

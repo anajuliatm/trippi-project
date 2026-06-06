@@ -30,7 +30,7 @@ function formatDate(date: string) {
     day: "2-digit",
     month: "short",
     year: "numeric",
-  }).format(new Date(date));
+  }).format(new Date(`${date}T00:00:00`));
 }
 
 function getTodayDate() {
@@ -56,6 +56,7 @@ export function TripsPage() {
   const [trips, setTrips] = useState<DashboardTrip[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [addTripModalError, setAddTripModalError] = useState<string | null>(null);
   const [newTripForm, setNewTripForm] = useState<NewTripForm>({
     destination: "",
     imageUrl: "",
@@ -125,11 +126,12 @@ export function TripsPage() {
     }
 
     if (!newTripForm.destination.trim()) {
-      setError("Informe o destino da viagem.");
+      setAddTripModalError("Informe o destino da viagem.");
       return;
     }
 
     try {
+      setAddTripModalError(null);
       setError(null);
 
       const participantEmails = Array.from(
@@ -300,7 +302,7 @@ export function TripsPage() {
         <Modal
           open={isAddModalOpen}
           title="Adicionar viagem"
-          onClose={() => setIsAddModalOpen(false)}
+          onClose={() => { setIsAddModalOpen(false); setAddTripModalError(null); }}
           footer={
             <>
               <button type="button" className="modal-btn" onClick={() => setIsAddModalOpen(false)}>
@@ -317,6 +319,10 @@ export function TripsPage() {
           }
         >
           <form className="modal-form" onSubmit={(event) => event.preventDefault()}>
+            {addTripModalError ? (
+              <p className="modal-callout">{addTripModalError}</p>
+            ) : null}
+
             <div className="modal-form__row">
               <label htmlFor="trip-destination">Destino</label>
               <input

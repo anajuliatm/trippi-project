@@ -39,7 +39,7 @@ function formatDate(date: string) {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
-  }).format(new Date(date));
+  }).format(new Date(`${date}T00:00:00`));
 }
 
 function formatCurrency(value: number) {
