@@ -89,7 +89,7 @@ def update_trip(
             trip.destination = trip_data.destination
 
         if trip_data.image_url is not None:
-            trip.image_url = trip_data.image_url
+            trip.image_url = trip_data.image_url or None
 
         if trip_data.departure_date is not None:
             trip.departure_date = trip_data.departure_date

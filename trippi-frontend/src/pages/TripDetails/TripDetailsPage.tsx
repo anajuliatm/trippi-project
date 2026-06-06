@@ -93,6 +93,8 @@ type ActionButtonMode = "add" | "edit" | "delete";
 type ItineraryEditorMode = "add" | "edit";
 
 interface OverviewFormState {
+  destination: string;
+  imageUrl: string;
   departureDate: string;
   endDate: string;
 }
@@ -480,6 +482,8 @@ export function TripDetailsPage() {
   const [isParticipantsOpen, setIsParticipantsOpen] = useState(false);
 
   const [overviewForm, setOverviewForm] = useState<OverviewFormState>({
+    destination: "",
+    imageUrl: "",
     departureDate: "",
     endDate: "",
   });
@@ -590,6 +594,8 @@ export function TripDetailsPage() {
 
     setOverviewModalError(null);
     setOverviewForm({
+      destination: tripData.destination,
+      imageUrl: tripData.image !== DEFAULT_TRIP_IMAGE ? tripData.image : "",
       departureDate: tripData.departureDate,
       endDate: tripData.endDate,
     });
@@ -647,6 +653,11 @@ export function TripDetailsPage() {
       return;
     }
 
+    if (!overviewForm.destination.trim()) {
+      setOverviewModalError("Informe o destino da viagem.");
+      return;
+    }
+
     if (overviewForm.endDate < overviewForm.departureDate) {
       setOverviewModalError("A data de volta não pode ser anterior à data de ida.");
       return;
@@ -657,11 +668,15 @@ export function TripDetailsPage() {
       setError(null);
 
       const shouldUpdateTrip =
+        overviewForm.destination.trim() !== tripData.destination ||
+        overviewForm.imageUrl !== (tripData.image !== DEFAULT_TRIP_IMAGE ? tripData.image : "") ||
         overviewForm.departureDate !== tripData.departureDate ||
         overviewForm.endDate !== tripData.endDate;
 
       if (shouldUpdateTrip) {
         await updateTripRequest(tripData.id, {
+          destination: overviewForm.destination.trim(),
+          image_url: overviewForm.imageUrl.trim(),
           departure_date: overviewForm.departureDate,
           return_date: overviewForm.endDate,
         });
@@ -1037,6 +1052,31 @@ export function TripDetailsPage() {
             {overviewModalError ? (
               <p className="trip-modal-message trip-modal-message--error">{overviewModalError}</p>
             ) : null}
+
+            <div className="modal-form__row">
+              <label htmlFor="overview-destination">Destino</label>
+              <input
+                id="overview-destination"
+                type="text"
+                value={overviewForm.destination}
+                onChange={(event) =>
+                  setOverviewForm((previous) => ({ ...previous, destination: event.target.value }))
+                }
+              />
+            </div>
+
+            <div className="modal-form__row">
+              <label htmlFor="overview-image">Imagem de capa (URL)</label>
+              <input
+                id="overview-image"
+                type="text"
+                placeholder="Ex.: site.com/imagem.jpg"
+                value={overviewForm.imageUrl}
+                onChange={(event) =>
+                  setOverviewForm((previous) => ({ ...previous, imageUrl: event.target.value }))
+                }
+              />
+            </div>
 
             <div className="modal-inline-fields">
               <div className="modal-form__row">
