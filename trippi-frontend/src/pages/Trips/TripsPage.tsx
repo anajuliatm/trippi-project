@@ -351,7 +351,7 @@ export function TripsPage() {
             ) : null}
 
             <div className="modal-form__row">
-              <label htmlFor="trip-destination">Destino</label>
+              <label htmlFor="trip-destination">Destino <span style={{ color: "#f87171" }}>*</span></label>
               <input
                 id="trip-destination"
                 type="text"

@@ -1054,7 +1054,7 @@ export function TripDetailsPage() {
             ) : null}
 
             <div className="modal-form__row">
-              <label htmlFor="overview-destination">Destino</label>
+              <label htmlFor="overview-destination">Destino <span style={{ color: "#f87171" }}>*</span></label>
               <input
                 id="overview-destination"
                 type="text"
@@ -1313,7 +1313,7 @@ export function TripDetailsPage() {
             </div>
 
             <div className="modal-form__row">
-              <label htmlFor="itinerary-title">Título</label>
+              <label htmlFor="itinerary-title">Título <span style={{ color: "#f87171" }}>*</span></label>
               <input
                 id="itinerary-title"
                 type="text"
