@@ -851,11 +851,17 @@ export function TripDetailsPage() {
       return;
     }
 
+    const emailRegex = /^[^\s@]+(?<!\.)@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedParticipantEmail)) {
+      setOverviewModalError("Informe um email válido.");
+      return;
+    }
+
     try {
       const user = await getUserByEmailRequest(trimmedParticipantEmail);
 
       if (participantsUsers.some((participant) => participant.userId === user.id)) {
-        setParticipantInput("");
+        setOverviewModalError("Este usuário já está na lista.");
         return;
       }
 
@@ -867,6 +873,7 @@ export function TripDetailsPage() {
           role: "member",
         },
       ]);
+      setOverviewModalError(null);
       setParticipantInput("");
     } catch (participantError) {
       setOverviewModalError(

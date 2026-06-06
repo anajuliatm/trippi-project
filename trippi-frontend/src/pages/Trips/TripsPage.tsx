@@ -65,6 +65,7 @@ export function TripsPage() {
     participants: [],
   });
   const [newParticipantName, setNewParticipantName] = useState("");
+  const [addingParticipant, setAddingParticipant] = useState(false);
 
   useEffect(() => {
     async function loadTrips() {
@@ -192,7 +193,7 @@ export function TripsPage() {
       resetNewTripForm();
       await loadTrips();
     } catch (saveError) {
-      setError(
+      setAddTripModalError(
         saveError instanceof Error
           ? saveError.message
           : "Nao foi possivel criar a viagem.",
@@ -200,7 +201,7 @@ export function TripsPage() {
     }
   }
 
-  function handleAddParticipant() {
+  async function handleAddParticipant() {
     const trimmedName = newParticipantName.trim().toLowerCase();
 
     if (!trimmedName) {
@@ -208,15 +209,36 @@ export function TripsPage() {
     }
 
     if (newTripForm.participants.includes(trimmedName)) {
-      setNewParticipantName("");
+      setAddTripModalError("Este email já foi adicionado.");
       return;
     }
 
-    setNewTripForm((previous) => ({
-      ...previous,
-      participants: [...previous.participants, trimmedName],
-    }));
-    setNewParticipantName("");
+    const emailRegex = /^[^\s@]+(?<!\.)@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedName)) {
+      setAddTripModalError("Informe um email válido.");
+      return;
+    }
+
+    try {
+      setAddingParticipant(true);
+      setAddTripModalError(null);
+      const resolvedUser = await getUserByEmailRequest(trimmedName);
+      if (resolvedUser.id === user?.id) {
+        setAddTripModalError("Este usuário já é participante da viagem.");
+        return;
+      }
+      setNewTripForm((previous) => ({
+        ...previous,
+        participants: [...previous.participants, trimmedName],
+      }));
+      setNewParticipantName("");
+    } catch (err) {
+      setAddTripModalError(
+        err instanceof Error ? err.message : "Nao foi possivel localizar o usuario.",
+      );
+    } finally {
+      setAddingParticipant(false);
+    }
   }
 
   return (
@@ -434,8 +456,8 @@ export function TripsPage() {
                     value={newParticipantName}
                     onChange={(event) => setNewParticipantName(event.target.value)}
                   />
-                  <button type="button" className="modal-btn" onClick={handleAddParticipant}>
-                    Adicionar
+                  <button type="button" className="modal-btn" onClick={() => void handleAddParticipant()} disabled={addingParticipant}>
+                    {addingParticipant ? "Verificando..." : "Adicionar"}
                   </button>
                 </div>
               </div>
