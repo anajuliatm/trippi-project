@@ -3,7 +3,7 @@ from decimal import Decimal, ROUND_DOWN
 from uuid import UUID
 
 from fastapi import HTTPException, status
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -73,13 +73,17 @@ def create_finance_entry(
 
 
 def list_trip_finances(db: Session, trip_id: str) -> list[Finance]:
-    _get_trip_or_404(db=db, trip_id=trip_id)
+    trip = _get_trip_or_404(db=db, trip_id=trip_id)
+    exclusion = _build_out_of_range_filter(db=db, trip=trip)
 
     statement = (
         select(Finance)
         .where(Finance.trip_id == trip_id)
         .order_by(Finance.created_at.desc())
     )
+    if exclusion is not None:
+        statement = statement.where(~exclusion)
+
     return list(db.execute(statement).scalars().all())
 
 
@@ -373,6 +377,8 @@ def calculate_trip_financials(db: Session, trip_id: str | UUID) -> TripFinancial
     paid_by_user = {participant_id: Decimal("0.00") for participant_id in participant_ids}
     should_pay_by_user = {participant_id: Decimal("0.00") for participant_id in participant_ids}
 
+    exclusion = _build_out_of_range_filter(db=db, trip=trip)
+
     paid_statement = (
         select(
             Finance.user_id.label("user_id"),
@@ -381,6 +387,8 @@ def calculate_trip_financials(db: Session, trip_id: str | UUID) -> TripFinancial
         .where(Finance.trip_id == trip.id, Finance.type == EXPENSE_TYPE)
         .group_by(Finance.user_id)
     )
+    if exclusion is not None:
+        paid_statement = paid_statement.where(~exclusion)
 
     total_expenses = Decimal("0.00")
     for row in db.execute(paid_statement):
@@ -400,6 +408,8 @@ def calculate_trip_financials(db: Session, trip_id: str | UUID) -> TripFinancial
         .where(Finance.trip_id == trip.id, Finance.type == EXPENSE_TYPE)
         .order_by(Finance.created_at.asc(), Finance.id.asc())
     )
+    if exclusion is not None:
+        expense_statement = expense_statement.where(~exclusion)
 
     for expense in db.execute(expense_statement):
         if expense.user_id not in paid_by_user:
@@ -436,6 +446,31 @@ def calculate_trip_financials(db: Session, trip_id: str | UUID) -> TripFinancial
         total_expenses=_quantize(total_expenses),
         remaining_budget=_quantize(budget - total_expenses),
         participants=participants,
+    )
+
+
+def _build_out_of_range_filter(db: Session, trip: Trip):
+    """Retorna filtro SQLAlchemy para excluir lançamentos de atividades fora do período da viagem."""
+    out_of_range_statement = (
+        select(Itinerary.id)
+        .where(
+            Itinerary.trip_id == trip.id,
+            or_(
+                Itinerary.activity_date < trip.departure_date,
+                Itinerary.activity_date > trip.return_date,
+            )
+        )
+    )
+    out_of_range_ids = list(db.execute(out_of_range_statement).scalars().all())
+
+    if not out_of_range_ids:
+        return None
+
+    return or_(
+        *[
+            Finance.description.like(f"{ITINERARY_FINANCE_PREFIX}{iid}]%")
+            for iid in out_of_range_ids
+        ]
     )
 
 

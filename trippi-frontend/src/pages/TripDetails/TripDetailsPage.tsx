@@ -647,6 +647,11 @@ export function TripDetailsPage() {
       return;
     }
 
+    if (overviewForm.endDate < overviewForm.departureDate) {
+      setOverviewModalError("A data de volta não pode ser anterior à data de ida.");
+      return;
+    }
+
     try {
       setOverviewModalError(null);
       setError(null);

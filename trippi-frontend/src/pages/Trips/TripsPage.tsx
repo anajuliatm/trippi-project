@@ -130,6 +130,11 @@ export function TripsPage() {
       return;
     }
 
+    if (newTripForm.endDate < newTripForm.departureDate) {
+      setAddTripModalError("A data de volta não pode ser anterior à data de ida.");
+      return;
+    }
+
     try {
       setAddTripModalError(null);
       setError(null);
