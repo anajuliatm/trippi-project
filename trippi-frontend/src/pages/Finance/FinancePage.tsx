@@ -128,6 +128,44 @@ export function FinancePage() {
     }
 
     void loadFinance();
+
+    async function silentRefresh() {
+      if (!user) {
+        return
+      }
+
+      try {
+        const dashboardTrips = await getDashboardTripsRequest();
+        const activeTrips = dashboardTrips.filter((trip) => trip.status === "active");
+
+        const tripData = await Promise.all(
+          activeTrips.map(async (trip) => {
+            const [balances, settlements] = await Promise.all([
+              getTripBalancesRequest(trip.id),
+              getTripSettlementsRequest(trip.id),
+            ]);
+
+            return { trip, balances, settlements };
+          }),
+        );
+
+        const nextSummaries = tripData.map(({ trip, balances }) =>
+          mapTripSummary(trip, balances, user!.id),
+        );
+
+        const nextSettlements = tripData.flatMap(({ trip, settlements }) =>
+          mapTripSettlements(settlements, trip, user!.id),
+        );
+
+        setTripSummaries(nextSummaries);
+        setSettlements(nextSettlements);
+      } catch {
+      }
+
+    }
+
+    const interval = setInterval(() => { void silentRefresh() }, 30000);
+    return () => clearInterval(interval);
   }, [user]);
 
   const groupedSettlements = useMemo(
@@ -189,6 +227,11 @@ export function FinancePage() {
         </div>
 
         {activeTab === "summary" ? (
+          tripSummaries.length === 0 ? (
+            <div className="settlement-empty">
+              <h3>Nenhuma viagem ativa encontrada.</h3>
+            </div>
+          ) : (
           <section className="finance-summary-list">
             {tripSummaries.map((trip, index) => (
               <motion.article
@@ -226,6 +269,7 @@ export function FinancePage() {
               </motion.article>
             ))}
           </section>
+          )
         ) : (
           <SettlementsTab settlements={groupedSettlements} />
         )}

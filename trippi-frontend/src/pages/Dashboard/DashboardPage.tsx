@@ -49,8 +49,20 @@ export function DashboardPage() {
 
     void loadDashboard();
 
+    const interval = setInterval(async () => {
+      try {
+        const data = await getDashboardTripsRequest();
+        if (isMounted) {
+          setTrips(data);
+        }
+      } catch {
+
+      }
+    }, 30000);
+
     return () => {
       isMounted = false;
+      clearInterval(interval);
     };
   }, []);
 
@@ -66,12 +78,14 @@ export function DashboardPage() {
       <div className="dashboard">
         <h1 className="dashboard__title">Próximas viagens</h1>
 
-        {loading ? <p>Carregando viagens...</p> : null}
+        {loading ? <section className="trips-empty"><h2>Carregando viagens...</h2></section> : null}
 
         {!loading && error ? <p>{error}</p> : null}
 
         {!loading && !error && activeTrips.length === 0 ? (
-          <p>Nenhuma viagem ativa encontrada.</p>
+          <section className="trips-empty">
+            <h2>Nenhuma viagem ativa encontrada.</h2>
+          </section>
         ) : null}
 
         {!loading && !error && activeTrips.length > 0 ? (
