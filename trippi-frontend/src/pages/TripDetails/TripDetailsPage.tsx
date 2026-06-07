@@ -492,6 +492,7 @@ export function TripDetailsPage() {
   const [participantInput, setParticipantInput] = useState("");
   const [budgetDraftValue, setBudgetDraftValue] = useState("0");
   const [addingParticipant, setAddingParticipant] = useState(false);
+  const [deleteTripError, setDeleteTripError] = useState<string | null>(null);
 
   const [itineraryModalError, setItineraryModalError] = useState<string | null>(null);
   const [itineraryMode, setItineraryMode] = useState<ItineraryEditorMode>("add");
@@ -913,7 +914,7 @@ export function TripDetailsPage() {
       await deleteTripRequest(tripData.id);
       navigate("/trips");
     } catch (deleteError) {
-      setError(
+      setDeleteTripError(
         deleteError instanceof Error
           ? deleteError.message
           : "Nao foi possivel excluir a viagem.",
@@ -1161,11 +1162,11 @@ export function TripDetailsPage() {
           open={isTripDeleteOpen}
           title="Excluir viagem"
           description="Tem certeza que deseja excluir? Esta operacao nao podera ser desfeita."
-          onClose={() => setIsTripDeleteOpen(false)}
+          onClose={() => { setIsTripDeleteOpen(false); setDeleteTripError(null); }}
           size="sm"
           footer={
             <>
-              <button type="button" className="modal-btn" onClick={() => setIsTripDeleteOpen(false)}>
+              <button type="button" className="modal-btn" onClick={() => {setIsTripDeleteOpen(false); setDeleteTripError(null); }}>
                 Cancelar
               </button>
               <button
@@ -1177,7 +1178,11 @@ export function TripDetailsPage() {
               </button>
             </>
           }
-        />
+        >
+          {deleteTripError && (
+            <div className="modal-callout modal-callout--error">{deleteTripError}</div>
+          )}
+        </Modal>
 
         <Modal
           open={isBudgetEditOpen}
