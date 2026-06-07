@@ -491,6 +491,7 @@ export function TripDetailsPage() {
   const [participantsUsers, setParticipantsUsers] = useState<TripParticipant[]>([]);
   const [participantInput, setParticipantInput] = useState("");
   const [budgetDraftValue, setBudgetDraftValue] = useState("0");
+  const [addingParticipant, setAddingParticipant] = useState(false);
 
   const [itineraryModalError, setItineraryModalError] = useState<string | null>(null);
   const [itineraryMode, setItineraryMode] = useState<ItineraryEditorMode>("add");
@@ -873,6 +874,7 @@ export function TripDetailsPage() {
     }
 
     try {
+      setAddingParticipant(true);
       const user = await getUserByEmailRequest(trimmedParticipantEmail);
 
       if (participantsUsers.some((participant) => participant.userId === user.id)) {
@@ -896,6 +898,8 @@ export function TripDetailsPage() {
           ? participantError.message
           : "Nao foi possivel adicionar o participante por email.",
       );
+    } finally {
+      setAddingParticipant(false);
     }
   }
 
@@ -1144,8 +1148,8 @@ export function TripDetailsPage() {
                     value={participantInput}
                     onChange={(event) => setParticipantInput(event.target.value)}
                   />
-                  <button type="button" className="modal-btn" onClick={() => void handleAddParticipant()}>
-                    Adicionar
+                  <button type="button" className="modal-btn" onClick={() => void handleAddParticipant()} disabled={addingParticipant}>
+                    {addingParticipant ? "Verificando..." : "Adicionar"}
                   </button>
                 </div>
               </div>
