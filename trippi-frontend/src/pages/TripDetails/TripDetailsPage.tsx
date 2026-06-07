@@ -566,6 +566,45 @@ export function TripDetailsPage() {
     }
 
     void loadTripDetails();
+
+    async function silentRefresh() {
+      if (!tripId) {
+        return
+      }
+      try {
+        const [trip, summary, members, finances, itinerary] = await 
+        Promise.all([
+          getTripByIdRequest(tripId),
+          getTripSummaryRequest(tripId),
+          getTripMembersRequest(tripId),
+          getTripFinancesRequest(tripId),
+          getTripItineraryRequest(tripId),
+        ]);
+
+        const userMap = await getUsersMapRequest([
+          ...members.map((member) => member.user_id),
+          ...finances.map((finance) => finance.user_id),
+          trip.owner_id,
+        ]);
+        
+        setTripData(
+          buildTripDetailsData({
+            trip,
+            summary,
+            members,
+            finances,
+            itinerary,
+            userMap,
+          }),
+        );
+        
+      } catch {
+    
+      }
+    }
+
+    const interval = setInterval(() => { void silentRefresh()}, 20000);
+    return () => clearInterval(interval);
   }, [tripId]);
 
   const itineraryDates = useMemo(() => {

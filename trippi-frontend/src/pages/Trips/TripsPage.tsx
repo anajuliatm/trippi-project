@@ -86,6 +86,18 @@ export function TripsPage() {
     }
 
     void loadTrips();
+
+    async function silentRefresh() {
+      try {
+        const data = await getDashboardTripsRequest();
+        setTrips(data);
+      } catch {
+
+      }
+    }
+
+    const interval = setInterval(() => { void silentRefresh()}, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const filteredTrips = useMemo(() => {
