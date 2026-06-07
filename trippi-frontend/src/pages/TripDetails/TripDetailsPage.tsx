@@ -1161,7 +1161,6 @@ export function TripDetailsPage() {
         <Modal
           open={isTripDeleteOpen}
           title="Excluir viagem"
-          description="Tem certeza que deseja excluir? Esta operacao nao podera ser desfeita."
           onClose={() => { setIsTripDeleteOpen(false); setDeleteTripError(null); }}
           size="sm"
           footer={
@@ -1179,6 +1178,11 @@ export function TripDetailsPage() {
             </>
           }
         >
+          <p>Tem certeza que deseja excluir a viagem?</p>
+          
+          <p>Esta ação <strong> removerá o grupo permanentemente para todos os participantes </strong> e não poderá ser desfeita. 
+          </p>
+
           {deleteTripError && (
             <div className="modal-callout modal-callout--error">{deleteTripError}</div>
           )}
@@ -1375,7 +1379,6 @@ export function TripDetailsPage() {
         <Modal
           open={isItineraryDeleteOpen}
           title="Excluir item do roteiro"
-          description="Tem certeza que deseja excluir? Esta operacao nao podera ser desfeita."
           onClose={() => {
             setPendingDeleteRef(null);
             setIsItineraryDeleteOpen(false);
@@ -1398,7 +1401,10 @@ export function TripDetailsPage() {
               </button>
             </>
           }
-        />
+        >
+          <p>Tem certeza que deseja excluir esta atividade?</p>
+          <p>Ela será removida para todos os participantes e não poderá ser desfeita.</p>
+        </Modal>
       </div>
     </MainLayout>
   );
