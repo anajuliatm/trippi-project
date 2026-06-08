@@ -1,9 +1,10 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowDownLeft, ArrowUpRight, CalendarDays, Clock3, MapPin, Pencil, Plus, Trash2, Users } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, CalendarDays, Clock3, LogOut, MapPin, Pencil, Plus, Trash2, Users } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { BackButton } from "../../components/common/BackButton";
 import { Modal } from "../../components/common/Modal";
+import { useAuth } from "../../contexts/AuthContext";
 import { MainLayout } from "../../layouts/MainLayout";
 import {
   calculateDaysRemaining,
@@ -89,7 +90,7 @@ function getFinanceEntryDescription(description: string | null) {
 }
 
 type DetailTab = "overview" | "finance" | "itinerary";
-type ActionButtonMode = "add" | "edit" | "delete";
+type ActionButtonMode = "add" | "edit" | "delete" | "leave";
 type ItineraryEditorMode = "add" | "edit";
 
 interface OverviewFormState {
@@ -180,12 +181,14 @@ function ActionButtons({
     add: <Plus size={15} />,
     edit: <Pencil size={15} />,
     delete: <Trash2 size={15} />,
+    leave: <LogOut size={15} />,
   };
 
   const labelByMode: Record<ActionButtonMode, string> = {
     add: "Adicionar",
     edit: "Editar",
     delete: "Excluir",
+    leave: "Sair da viagem",
   };
 
   return (
@@ -210,14 +213,26 @@ function OverviewTab({
   daysRemaining,
   onEdit,
   onDelete,
+  onLeave,
   onViewParticipants,
+  canDeleteTrip,
+  canLeaveTrip,
 }: {
   trip: TripDetailsData;
   daysRemaining: number;
   onEdit: () => void;
   onDelete: () => void;
+  onLeave: () => void;
   onViewParticipants: () => void;
+  canDeleteTrip: boolean;
+  canLeaveTrip: boolean;
 }) {
+  const heroActionModes: ActionButtonMode[] = [
+    "edit",
+    ...(canDeleteTrip ? ["delete" as const] : []),
+    ...(canLeaveTrip ? ["leave" as const] : []),
+  ];
+
   return (
     <section className="trip-overview">
       <header className="trip-hero" style={{ backgroundImage: `url(${trip.image})` }}>
@@ -235,7 +250,7 @@ function OverviewTab({
 
           <ActionButtons
             className="trip-hero__actions"
-            modes={["edit", "delete"]}
+            modes={heroActionModes}
             onAction={(mode) => {
               if (mode === "edit") {
                 onEdit();
@@ -243,6 +258,10 @@ function OverviewTab({
 
               if (mode === "delete") {
                 onDelete();
+              }
+
+              if (mode === "leave") {
+                onLeave();
               }
             }}
           />
@@ -467,6 +486,7 @@ function ItineraryTabs({
 }
 
 export function TripDetailsPage() {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { id } = useParams();
   const tripId = id ?? "";
@@ -477,6 +497,7 @@ export function TripDetailsPage() {
   const [overviewModalError, setOverviewModalError] = useState<string | null>(null);
   const [isOverviewEditOpen, setIsOverviewEditOpen] = useState(false);
   const [isTripDeleteOpen, setIsTripDeleteOpen] = useState(false);
+  const [isLeaveTripOpen, setIsLeaveTripOpen] = useState(false);
   const [isBudgetEditOpen, setIsBudgetEditOpen] = useState(false);
   const [isItineraryModalOpen, setIsItineraryModalOpen] = useState(false);
   const [isItineraryDeleteOpen, setIsItineraryDeleteOpen] = useState(false);
@@ -494,6 +515,8 @@ export function TripDetailsPage() {
   const [budgetDraftValue, setBudgetDraftValue] = useState("0");
   const [addingParticipant, setAddingParticipant] = useState(false);
   const [deleteTripError, setDeleteTripError] = useState<string | null>(null);
+  const [leaveTripError, setLeaveTripError] = useState<string | null>(null);
+  const [leavingTrip, setLeavingTrip] = useState(false);
 
   const [itineraryModalError, setItineraryModalError] = useState<string | null>(null);
   const [itineraryMode, setItineraryMode] = useState<ItineraryEditorMode>("add");
@@ -628,6 +651,17 @@ export function TripDetailsPage() {
 
     return Math.max(tripData.budget + budgetAdjustment, 0);
   }, [budgetAdjustment, tripData]);
+
+  const currentUserMembership = useMemo(() => {
+    if (!tripData || !user) {
+      return null;
+    }
+
+    return tripData.memberDetails.find((participant) => participant.userId === user.id) ?? null;
+  }, [tripData, user]);
+
+  const isCurrentUserOwner = currentUserMembership?.role === "owner";
+  const canLeaveTrip = Boolean(currentUserMembership && !isCurrentUserOwner);
 
   function openOverviewEditModal() {
     if (!tripData) {
@@ -962,6 +996,28 @@ export function TripDetailsPage() {
     }
   }
 
+  async function handleLeaveTrip() {
+    if (!tripData || !user || !canLeaveTrip) {
+      return;
+    }
+
+    try {
+      setLeavingTrip(true);
+      setLeaveTripError(null);
+      setError(null);
+      await deleteTripMemberRequest(tripData.id, user.id);
+      navigate("/trips");
+    } catch (leaveError) {
+      setLeaveTripError(
+        leaveError instanceof Error
+          ? leaveError.message
+          : "Nao foi possivel sair da viagem.",
+      );
+    } finally {
+      setLeavingTrip(false);
+    }
+  }
+
   if (loading) {
     return (
       <MainLayout>
@@ -1028,7 +1084,10 @@ export function TripDetailsPage() {
                 daysRemaining={daysRemaining}
                 onEdit={openOverviewEditModal}
                 onDelete={() => setIsTripDeleteOpen(true)}
+                onLeave={() => setIsLeaveTripOpen(true)}
                 onViewParticipants={() => setIsParticipantsOpen(true)}
+                canDeleteTrip={isCurrentUserOwner}
+                canLeaveTrip={canLeaveTrip}
               />
             )}
             {activeTab === "finance" && <FinanceSummary trip={tripData} onEditBudget={openBudgetModal} />}
@@ -1198,34 +1257,81 @@ export function TripDetailsPage() {
           </form>
         </Modal>
 
+        {isCurrentUserOwner ? (
+          <Modal
+            open={isTripDeleteOpen}
+            title="Excluir viagem"
+            onClose={() => { setIsTripDeleteOpen(false); setDeleteTripError(null); }}
+            size="sm"
+            footer={
+              <>
+                <button type="button" className="modal-btn" onClick={() => {setIsTripDeleteOpen(false); setDeleteTripError(null); }}>
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  className="modal-btn modal-btn--danger"
+                  onClick={() => void handleDeleteTrip()}
+                >
+                  Excluir
+                </button>
+              </>
+            }
+          >
+            <p>Tem certeza que deseja excluir a viagem?</p>
+            
+            <p>Esta ação <strong> removerá o grupo permanentemente para todos os participantes </strong> e não poderá ser desfeita. 
+            </p>
+
+            {deleteTripError && (
+              <div className="modal-callout modal-callout--error">{deleteTripError}</div>
+            )}
+          </Modal>
+        ) : null}
+
         <Modal
-          open={isTripDeleteOpen}
-          title="Excluir viagem"
-          onClose={() => { setIsTripDeleteOpen(false); setDeleteTripError(null); }}
+          open={isLeaveTripOpen}
+          title="Sair da viagem"
+          onClose={() => {
+            if (leavingTrip) {
+              return;
+            }
+
+            setIsLeaveTripOpen(false);
+            setLeaveTripError(null);
+          }}
           size="sm"
           footer={
             <>
-              <button type="button" className="modal-btn" onClick={() => {setIsTripDeleteOpen(false); setDeleteTripError(null); }}>
+              <button
+                type="button"
+                className="modal-btn"
+                onClick={() => {
+                  setIsLeaveTripOpen(false);
+                  setLeaveTripError(null);
+                }}
+                disabled={leavingTrip}
+              >
                 Cancelar
               </button>
               <button
                 type="button"
                 className="modal-btn modal-btn--danger"
-                onClick={() => void handleDeleteTrip()}
+                onClick={() => void handleLeaveTrip()}
+                disabled={leavingTrip}
               >
-                Excluir
+                {leavingTrip ? "Saindo..." : "Sair da viagem"}
               </button>
             </>
           }
         >
-          <p>Tem certeza que deseja excluir a viagem?</p>
-          
-          <p>Esta ação <strong> removerá o grupo permanentemente para todos os participantes </strong> e não poderá ser desfeita. 
-          </p>
+          <p>Tem certeza que deseja sair desta viagem?</p>
 
-          {deleteTripError && (
-            <div className="modal-callout modal-callout--error">{deleteTripError}</div>
-          )}
+          <p>Voce deixará de participar do grupo e precisará ser adicionado novamente para voltar.</p>
+
+          {leaveTripError ? (
+            <div className="modal-callout modal-callout--error">{leaveTripError}</div>
+          ) : null}
         </Modal>
 
         <Modal
