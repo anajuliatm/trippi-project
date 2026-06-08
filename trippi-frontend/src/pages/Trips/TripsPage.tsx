@@ -347,14 +347,16 @@ export function TripsPage() {
                 whileTap={{ scale: 0.995 }}
                 onClick={() => navigate(`/trip/${trip.id}`)}
               >
-                <img src={trip.image} alt={trip.destination} className="trip-list-card__image" />
+                <div className="trip-list-card__media">
+                  <img src={trip.image} alt={trip.destination} className="trip-list-card__image" />
+                  <span className={`trip-status trip-status--${trip.status}`}>
+                    {STATUS_LABEL[trip.status]}
+                  </span>
+                </div>
 
                 <div className="trip-list-card__body">
                   <div className="trip-list-card__title-row">
                     <h2>{trip.destination}</h2>
-                    <span className={`trip-status trip-status--${trip.status}`}>
-                      {STATUS_LABEL[trip.status]}
-                    </span>
                   </div>
 
                   <div className="trip-list-card__meta">
