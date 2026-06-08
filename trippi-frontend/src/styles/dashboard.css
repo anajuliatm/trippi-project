@@ -9,9 +9,15 @@
 }
 
 .dashboard__trips {
-  display: flex;
+  display: grid;
   gap: 24px;
-  flex-wrap: wrap;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 255px), 1fr));
+  align-items: stretch;
+}
+
+.dashboard__trips > .trip-card:only-child {
+  max-width: 320px;
+  justify-self: start;
 }
 
 .dashboard__finance {
