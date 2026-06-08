@@ -53,10 +53,12 @@ export function TripsPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TripStatus>("active");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isSavingTrip, setIsSavingTrip] = useState(false);
   const [trips, setTrips] = useState<DashboardTrip[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [addTripModalError, setAddTripModalError] = useState<string | null>(null);
+  const [tripCreationSuccessMessage, setTripCreationSuccessMessage] = useState<string | null>(null);
   const [newTripForm, setNewTripForm] = useState<NewTripForm>({
     destination: "",
     imageUrl: "",
@@ -66,6 +68,18 @@ export function TripsPage() {
   });
   const [newParticipantName, setNewParticipantName] = useState("");
   const [addingParticipant, setAddingParticipant] = useState(false);
+
+  useEffect(() => {
+    if (!tripCreationSuccessMessage) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setTripCreationSuccessMessage(null);
+    }, 4000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [tripCreationSuccessMessage]);
 
   useEffect(() => {
     async function loadTrips() {
@@ -133,6 +147,10 @@ export function TripsPage() {
   }
 
   async function handleSaveNewTrip() {
+    if (isSavingTrip) {
+      return;
+    }
+
     if (!user) {
       setError("Sessao invalida. Faca login novamente.");
       return;
@@ -149,8 +167,10 @@ export function TripsPage() {
     }
 
     try {
+      setIsSavingTrip(true);
       setAddTripModalError(null);
       setError(null);
+      setTripCreationSuccessMessage(null);
 
       const participantEmails = Array.from(
         new Set(
@@ -202,6 +222,7 @@ export function TripsPage() {
       }
 
       setIsAddModalOpen(false);
+      setTripCreationSuccessMessage("Viagem criada com sucesso.");
       resetNewTripForm();
       await loadTrips();
     } catch (saveError) {
@@ -210,6 +231,8 @@ export function TripsPage() {
           ? saveError.message
           : "Nao foi possivel criar a viagem.",
       );
+    } finally {
+      setIsSavingTrip(false);
     }
   }
 
@@ -279,11 +302,27 @@ export function TripsPage() {
           type="button"
           className="trips-page__add-btn"
           aria-label="Adicionar viagem"
-          onClick={() => setIsAddModalOpen(true)}
+          onClick={() => {
+            setAddTripModalError(null);
+            setTripCreationSuccessMessage(null);
+            setIsAddModalOpen(true);
+          }}
         >
           <Plus size={16} />
           <span>Adicionar viagem</span>
         </button>
+
+        {tripCreationSuccessMessage ? (
+          <motion.section
+            className="trips-feedback trips-feedback--success trips-feedback--toast"
+            aria-live="polite"
+            initial={{ opacity: 0, y: -16, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.22, ease: "easeOut" }}
+          >
+            <p>{tripCreationSuccessMessage}</p>
+          </motion.section>
+        ) : null}
 
         {loading ? <section className="trips-empty"><h2>Carregando viagens...</h2></section> : null}
 
@@ -341,23 +380,43 @@ export function TripsPage() {
         <Modal
           open={isAddModalOpen}
           title="Adicionar viagem"
-          onClose={() => { setIsAddModalOpen(false); setAddTripModalError(null); }}
+          onClose={() => {
+            if (isSavingTrip) {
+              return;
+            }
+
+            setIsAddModalOpen(false);
+            setAddTripModalError(null);
+          }}
           footer={
             <>
-              <button type="button" className="modal-btn" onClick={() => setIsAddModalOpen(false)}>
+              <button
+                type="button"
+                className="modal-btn"
+                onClick={() => {
+                  setIsAddModalOpen(false);
+                  setAddTripModalError(null);
+                }}
+                disabled={isSavingTrip}
+              >
                 Cancelar
               </button>
               <button
                 type="button"
                 className="modal-btn modal-btn--primary"
                 onClick={handleSaveNewTrip}
+                disabled={isSavingTrip}
               >
-                Salvar viagem
+                {isSavingTrip ? "Criando viagem..." : "Salvar viagem"}
               </button>
             </>
           }
         >
           <form className="modal-form" onSubmit={(event) => event.preventDefault()}>
+            {isSavingTrip ? (
+              <p className="modal-callout modal-callout--info">Criando viagem...</p>
+            ) : null}
+
             {addTripModalError ? (
               <p className="modal-callout">{addTripModalError}</p>
             ) : null}
@@ -369,6 +428,7 @@ export function TripsPage() {
                 type="text"
                 placeholder="Ex.: Santiago"
                 value={newTripForm.destination}
+                disabled={isSavingTrip}
                 onChange={(event) =>
                   setNewTripForm((previous) => ({ ...previous, destination: event.target.value }))
                 }
@@ -382,6 +442,7 @@ export function TripsPage() {
                 type="text"
                 placeholder="Ex.: site.com/imagem.jpg"
                 value={newTripForm.imageUrl}
+                disabled={isSavingTrip}
                 onChange={(event) => {
                   setNewTripForm((previous) => ({
                     ...previous,
@@ -408,6 +469,7 @@ export function TripsPage() {
                   id="trip-departure-date"
                   type="date"
                   value={newTripForm.departureDate}
+                  disabled={isSavingTrip}
                   onChange={(event) =>
                     setNewTripForm((previous) => ({
                       ...previous,
@@ -423,6 +485,7 @@ export function TripsPage() {
                   id="trip-end-date"
                   type="date"
                   value={newTripForm.endDate}
+                  disabled={isSavingTrip}
                   onChange={(event) =>
                     setNewTripForm((previous) => ({ ...previous, endDate: event.target.value }))
                   }
@@ -442,6 +505,7 @@ export function TripsPage() {
                         <button
                           type="button"
                           aria-label={`Excluir participante ${participant}`}
+                          disabled={isSavingTrip}
                           onClick={() =>
                             setNewTripForm((previous) => ({
                               ...previous,
@@ -466,9 +530,10 @@ export function TripsPage() {
                     type="email"
                     placeholder="email@exemplo.com"
                     value={newParticipantName}
+                    disabled={isSavingTrip}
                     onChange={(event) => setNewParticipantName(event.target.value)}
                   />
-                  <button type="button" className="modal-btn" onClick={() => void handleAddParticipant()} disabled={addingParticipant}>
+                  <button type="button" className="modal-btn" onClick={() => void handleAddParticipant()} disabled={addingParticipant || isSavingTrip}>
                     {addingParticipant ? "Verificando..." : "Adicionar"}
                   </button>
                 </div>

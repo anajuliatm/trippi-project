@@ -291,7 +291,7 @@ function FinanceSummary({
       <div className="trip-finance__grid">
         <article className="trip-finance__card trip-finance__card--budget">
           <div className="trip-finance__card-header">
-            <p>Orcamento total</p>
+            <p>Orçamento total</p>
             <ActionButtons modes={["edit"]} onAction={() => onEditBudget()} />
           </div>
           <strong>{formatCurrency(trip.budget)}</strong>
@@ -308,9 +308,9 @@ function FinanceSummary({
         </article>
       </div>
 
-      <section className="trip-finance__entries" aria-label="Lancamentos da viagem">
+      <section className="trip-finance__entries" aria-label="Lançamentos da viagem">
         <div className="trip-section__header">
-          <h3 className="trip-finance__entries-title">Lancamentos da viagem</h3>
+          <h3 className="trip-finance__entries-title">Lançamentos da viagem</h3>
         </div>
 
         {financeEntries.length > 0 ? (
@@ -326,7 +326,6 @@ function FinanceSummary({
 
                   <div className="trip-finance-entry__content">
                     <strong>{entry.description}</strong>
-                    <span>{entry.username} registrou este lancamento</span>
                   </div>
 
                   <strong
