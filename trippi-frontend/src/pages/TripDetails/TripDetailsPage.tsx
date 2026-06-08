@@ -231,19 +231,21 @@ function OverviewTab({
         >
           <div className="trip-hero__title-row">
             <h1>{trip.destination}</h1>
-            <ActionButtons
-              modes={["edit", "delete"]}
-              onAction={(mode) => {
-                if (mode === "edit") {
-                  onEdit();
-                }
-
-                if (mode === "delete") {
-                  onDelete();
-                }
-              }}
-            />
           </div>
+
+          <ActionButtons
+            className="trip-hero__actions"
+            modes={["edit", "delete"]}
+            onAction={(mode) => {
+              if (mode === "edit") {
+                onEdit();
+              }
+
+              if (mode === "delete") {
+                onDelete();
+              }
+            }}
+          />
 
           <div className="trip-hero__meta-grid">
             <div>

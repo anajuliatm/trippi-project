@@ -69,10 +69,8 @@
 }
 
 .trip-hero__title-row {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  width: fit-content;
+  display: block;
+  width: 100%;
 }
 
 .trip-hero__back-link {
@@ -86,6 +84,16 @@
   font-size: clamp(34px, 4.8vw, 66px);
   line-height: 0.95;
   letter-spacing: -0.03em;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.trip-hero__actions {
+  width: fit-content;
+}
+
+.trip-hero .trip-section__actions {
+  flex-shrink: 0;
 }
 
 .trip-hero__meta-grid {
