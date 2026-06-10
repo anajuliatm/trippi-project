@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { Navigate, Link, useNavigate } from "react-router-dom";
-import { LockKeyhole, Mail, User } from "lucide-react";
+import { Eye, EyeOff, LockKeyhole, Mail, User } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import "../../styles/login-page.css";
 
@@ -14,6 +14,7 @@ export function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -115,13 +116,21 @@ export function LoginPage() {
             <div className="login-form__input-wrapper">
               <LockKeyhole size={18} />
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 name="password"
                 placeholder="Digite sua senha"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 required
               />
+              <button
+                type="button"
+                className="login-form__password-toggle"
+                aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                onClick={() => setShowPassword((prev) => !prev)}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
           </label>
 
