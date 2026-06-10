@@ -582,7 +582,7 @@ export function TripDetailsPage() {
         setError(
           loadError instanceof Error
             ? loadError.message
-            : "Nao foi possivel carregar a viagem.",
+            : "Não foi possível carregar a viagem.",
         );
         setTripData(null);
       } finally {
@@ -718,7 +718,7 @@ export function TripDetailsPage() {
       setError(
         reloadError instanceof Error
           ? reloadError.message
-          : "Nao foi possivel atualizar a tela da viagem.",
+          : "Não foi possível atualizar a tela da viagem.",
       );
     } finally {
       setLoading(false);
@@ -791,7 +791,7 @@ export function TripDetailsPage() {
       const message =
         saveError instanceof Error
           ? saveError.message
-          : "Nao foi possivel atualizar os dados da viagem.";
+          : "Não foi possível atualizar os dados da viagem.";
 
       if (message === "Apenas o dono da viagem pode atualiza-la") {
         setOverviewModalError("Apenas o owner da viagem pode alterar a data.");
@@ -825,7 +825,7 @@ export function TripDetailsPage() {
       setError(
         saveError instanceof Error
           ? saveError.message
-          : "Nao foi possivel atualizar o orcamento.",
+          : "Não foi possível atualizar o orçamento.",
       );
     }
   }
@@ -906,7 +906,7 @@ export function TripDetailsPage() {
       setError(
         saveError instanceof Error
           ? saveError.message
-          : "Nao foi possivel salvar o item do roteiro.",
+          : "Não foi possível salvar o item do roteiro.",
       );
     }
   }
@@ -931,7 +931,7 @@ export function TripDetailsPage() {
       setError(
         deleteError instanceof Error
           ? deleteError.message
-          : "Nao foi possivel excluir o item do roteiro.",
+          : "Não foi possível excluir o item do roteiro.",
       );
     }
   }
@@ -972,7 +972,7 @@ export function TripDetailsPage() {
       setOverviewModalError(
         participantError instanceof Error
           ? participantError.message
-          : "Nao foi possivel adicionar o participante por email.",
+          : "Não foi possível adicionar o participante por email.",
       );
     } finally {
       setAddingParticipant(false);
@@ -992,7 +992,7 @@ export function TripDetailsPage() {
       setDeleteTripError(
         deleteError instanceof Error
           ? deleteError.message
-          : "Nao foi possivel excluir a viagem.",
+          : "Não foi possível excluir a viagem.",
       );
     }
   }
@@ -1012,7 +1012,7 @@ export function TripDetailsPage() {
       setLeaveTripError(
         leaveError instanceof Error
           ? leaveError.message
-          : "Nao foi possivel sair da viagem.",
+          : "Não foi possível sair da viagem.",
       );
     } finally {
       setLeavingTrip(false);
@@ -1033,7 +1033,7 @@ export function TripDetailsPage() {
     return (
       <MainLayout>
         <div className="trip-details-empty">
-          <h1>Viagem nao encontrada</h1>
+          <h1>Viagem não encontrada</h1>
           <p>{error ?? "Confira o link e selecione uma viagem valida no dashboard."}</p>
           <BackButton className="trip-details-empty__link" />
         </div>

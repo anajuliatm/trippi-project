@@ -115,7 +115,7 @@ export async function createTripRequest(
     const { data } = await api.post<TripResponse>("/trips", payload);
     return data;
   } catch (error) {
-    parseApiError(error, "Nao foi possivel criar a viagem.");
+    parseApiError(error, "Não foi possível criar a viagem.");
   }
 }
 
@@ -124,7 +124,7 @@ export async function getTripsRequest(): Promise<TripResponse[]> {
     const { data } = await api.get<TripResponse[]>("/trips");
     return data;
   } catch (error) {
-    parseApiError(error, "Nao foi possivel carregar as viagens.");
+    parseApiError(error, "Não foi possível carregar as viagens.");
   }
 }
 
@@ -133,7 +133,7 @@ export async function getTripByIdRequest(tripId: string): Promise<TripResponse> 
     const { data } = await api.get<TripResponse>(`/trips/${tripId}`);
     return data;
   } catch (error) {
-    parseApiError(error, "Nao foi possivel carregar a viagem.");
+    parseApiError(error, "Não foi possível carregar a viagem.");
   }
 }
 
@@ -145,7 +145,7 @@ export async function updateTripRequest(
     const { data } = await api.patch<TripResponse>(`/trips/${tripId}`, payload);
     return data;
   } catch (error) {
-    parseApiError(error, "Nao foi possivel atualizar a viagem.");
+    parseApiError(error, "Não foi possível atualizar a viagem.");
   }
 }
 
@@ -156,7 +156,7 @@ export async function deleteTripRequest(
     const { data } = await api.delete<{ message: string }>(`/trips/${tripId}`);
     return data;
   } catch (error) {
-    parseApiError(error, "Nao foi possivel excluir a viagem.");
+    parseApiError(error, "Não foi possível excluir a viagem.");
   }
 }
 
@@ -167,7 +167,7 @@ export async function getTripSummaryRequest(
     const { data } = await api.get<TripFinanceSummary>(`/trips/${tripId}/summary`);
     return data;
   } catch (error) {
-    parseApiError(error, "Nao foi possivel carregar o resumo financeiro da viagem.");
+    parseApiError(error, "Não foi possível carregar o resumo financeiro da viagem.");
   }
 }
 
@@ -181,7 +181,7 @@ export async function getTripBalancesRequest(
 
     return data;
   } catch (error) {
-    parseApiError(error, "Nao foi possivel carregar os saldos da viagem.");
+    parseApiError(error, "Não foi possível carregar os saldos da viagem.");
   }
 }
 
@@ -192,7 +192,7 @@ export async function getTripSettlementsRequest(
     const { data } = await api.get<TripSettlement[]>(`/trips/${tripId}/settlements`);
     return data;
   } catch (error) {
-    parseApiError(error, "Nao foi possivel carregar as sugestoes de acerto da viagem.");
+    parseApiError(error, "Não foi possível carregar as sugestões de acerto da viagem.");
   }
 }
 
@@ -227,6 +227,6 @@ export async function getDashboardTripsRequest(): Promise<DashboardTrip[]> {
         new Date(right.departureDate).getTime(),
     );
   } catch (error) {
-    parseApiError(error, "Nao foi possivel montar os dados do dashboard.");
+    parseApiError(error, "Não foi possível montar os dados do dashboard.");
   }
 }

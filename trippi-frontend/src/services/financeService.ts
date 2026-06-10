@@ -43,7 +43,7 @@ export async function createFinanceRequest(
 
     return data;
   } catch (error) {
-    parseApiError(error, "Nao foi possivel criar o lancamento financeiro.");
+    parseApiError(error, "Não foi possível criar o lançamento financeiro.");
   }
 }
 
@@ -52,7 +52,7 @@ export async function getTripFinancesRequest(tripId: string): Promise<FinanceEnt
     const { data } = await api.get<FinanceEntry[]>(`/finance/trip/${tripId}`);
     return data;
   } catch (error) {
-    parseApiError(error, "Nao foi possivel carregar os lancamentos da viagem.");
+    parseApiError(error, "Não foi possível carregar os lançamentos da viagem.");
   }
 }
 
@@ -67,7 +67,7 @@ export async function getUserTripFinancesRequest(
 
     return data;
   } catch (error) {
-    parseApiError(error, "Nao foi possivel carregar os lancamentos do usuario.");
+    parseApiError(error, "Não foi possível carregar os lançamentos do usuário.");
   }
 }
 
@@ -85,7 +85,7 @@ export async function updateFinanceRequest(
 
     return data;
   } catch (error) {
-    parseApiError(error, "Nao foi possivel atualizar o lancamento financeiro.");
+    parseApiError(error, "Não foi possível atualizar o lançamento financeiro.");
   }
 }
 
@@ -101,6 +101,6 @@ export async function deleteFinanceRequest(
 
     return data;
   } catch (error) {
-    parseApiError(error, "Nao foi possivel remover o lancamento financeiro.");
+    parseApiError(error, "Não foi possível remover o lançamento financeiro.");
   }
 }

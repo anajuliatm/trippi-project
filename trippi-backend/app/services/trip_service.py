@@ -43,7 +43,7 @@ def create_trip(db: Session, trip_data: TripCreate) -> Trip:
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Nao foi possivel criar a viagem",
+            detail="Não foi possível criar a viagem",
         ) from exc
 
     db.refresh(new_trip)
@@ -107,13 +107,13 @@ def update_trip(
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Nao foi possivel atualizar a viagem",
+            detail="Não foi possível atualizar a viagem",
         ) from exc
 
     if trip is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Viagem nao encontrada",
+            detail="Viagem não encontrada",
         )
 
     db.refresh(trip)
@@ -136,7 +136,7 @@ def delete_trip(db: Session, trip_id: str, user_id: str) -> dict[str, str]:
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Nao foi possivel excluir a viagem",
+            detail="Não foi possível excluir a viagem",
         ) from exc
 
     return {"message": "Viagem deletada"}
@@ -166,7 +166,7 @@ def _get_trip_or_404(db: Session, trip_id: str) -> Trip:
     if trip is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Viagem nao encontrada",
+            detail="Viagem não encontrada",
         )
 
     return trip
@@ -186,7 +186,7 @@ def _get_trip_or_404_for_user(db: Session, trip_id: str, user_id: str) -> Trip:
     if trip is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Viagem nao encontrada",
+            detail="Viagem não encontrada",
         )
 
     return trip

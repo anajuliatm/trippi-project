@@ -19,6 +19,6 @@ export async function getTripPaymentsRequest(
     const { data } = await api.get<PaymentEntry[]>(`/payments/trip/${tripId}`);
     return data;
   } catch (error) {
-    parseApiError(error, "Nao foi possivel carregar os acertos da viagem.");
+    parseApiError(error, "Não foi possível carregar os acertos da viagem.");
   }
 }

@@ -92,7 +92,7 @@ export function TripsPage() {
         setError(
           loadError instanceof Error
             ? loadError.message
-            : "Nao foi possivel carregar as viagens.",
+            : "Não foi possível carregar as viagens.",
         );
       } finally {
         setLoading(false);
@@ -139,7 +139,7 @@ export function TripsPage() {
       setError(
         loadError instanceof Error
           ? loadError.message
-          : "Nao foi possivel carregar as viagens.",
+          : "Não foi possível carregar as viagens.",
       );
     } finally {
       setLoading(false);
@@ -217,7 +217,7 @@ export function TripsPage() {
 
       if (failedParticipants.length > 0) {
         setError(
-          "Viagem criada, mas um ou mais participantes nao puderam ser adicionados. Confirme se os emails informados existem.",
+          "Viagem criada, mas um ou mais participantes não puderam ser adicionados. Confirme se os emails informados existem.",
         );
       }
 
@@ -229,7 +229,7 @@ export function TripsPage() {
       setAddTripModalError(
         saveError instanceof Error
           ? saveError.message
-          : "Não foi possivel criar a viagem.",
+          : "Não foi possível criar a viagem.",
       );
     } finally {
       setIsSavingTrip(false);
@@ -269,7 +269,7 @@ export function TripsPage() {
       setNewParticipantName("");
     } catch (err) {
       setAddTripModalError(
-        err instanceof Error ? err.message : "Nao foi possivel localizar o usuario.",
+        err instanceof Error ? err.message : "Não foi possível localizar o usuário.",
       );
     } finally {
       setAddingParticipant(false);
@@ -328,7 +328,7 @@ export function TripsPage() {
 
         {!loading && error ? (
           <section className="trips-empty">
-            <h2>Nao foi possivel carregar os dados.</h2>
+            <h2>Não foi possível carregar os dados.</h2>
             <p>{error}</p>
           </section>
         ) : null}

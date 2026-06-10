@@ -18,7 +18,7 @@ export async function getUserByIdRequest(userId: string): Promise<AppUser> {
     const { data } = await api.get<AppUser>(`/users/${userId}`);
     return data;
   } catch (error) {
-    parseApiError(error, "Nao foi possivel carregar os dados do usuario.");
+    parseApiError(error, "Não foi possível carregar os dados do usuário.");
   }
 }
 
@@ -29,7 +29,7 @@ export async function getUserByEmailRequest(email: string): Promise<AppUser> {
     });
     return data;
   } catch (error) {
-    parseApiError(error, "Nao foi possivel localizar o usuario por email.");
+    parseApiError(error, "Não foi possível localizar o usuário por email.");
   }
 }
 
@@ -41,7 +41,7 @@ export async function updateUserRequest(
     const { data } = await api.patch<AppUser>(`/users/${userId}`, payload);
     return data;
   } catch (error) {
-    parseApiError(error, "Nao foi possivel atualizar os dados do usuario.");
+    parseApiError(error, "Não foi possível atualizar os dados do usuário.");
   }
 }
 

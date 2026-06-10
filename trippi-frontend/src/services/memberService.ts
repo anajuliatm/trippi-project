@@ -30,7 +30,7 @@ export async function addTripMemberRequest(
 
     return data;
   } catch (error) {
-    parseApiError(error, "Nao foi possivel adicionar o membro na viagem.");
+    parseApiError(error, "Não foi possível adicionar o membro na viagem.");
   }
 }
 
@@ -39,7 +39,7 @@ export async function getTripMembersRequest(tripId: string): Promise<TripMember[
     const { data } = await api.get<TripMember[]>(`/trip_member/trip/${tripId}`);
     return data;
   } catch (error) {
-    parseApiError(error, "Nao foi possivel carregar os participantes da viagem.");
+    parseApiError(error, "Não foi possível carregar os participantes da viagem.");
   }
 }
 
@@ -54,6 +54,6 @@ export async function deleteTripMemberRequest(
 
     return data;
   } catch (error) {
-    parseApiError(error, "Nao foi possivel remover o membro da viagem.");
+    parseApiError(error, "Não foi possível remover o membro da viagem.");
   }
 }

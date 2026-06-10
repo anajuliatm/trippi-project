@@ -81,7 +81,7 @@ export function ProfilePage() {
       setMessage(
         error instanceof Error
           ? error.message
-          : "Nao foi possivel atualizar o perfil.",
+          : "Não foi possível atualizar o perfil.",
       );
       setMessageType("error");
     } finally {

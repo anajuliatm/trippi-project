@@ -8,12 +8,12 @@ export const api = axios.create({
 
 export function parseApiError(
   error: unknown,
-  fallbackMessage = "Nao foi possivel concluir a requisicao.",
+  fallbackMessage = "Não foi possível concluir a requisição.",
 ): never {
   if (axios.isAxiosError(error)) {
     if (!error.response) {
       throw new Error(
-        "Nao foi possivel conectar ao backend. Verifique se a API esta rodando e se o CORS esta liberado.",
+        "Não foi possível conectar ao backend. Verifique se a API está rodando e se o CORS está liberado.",
       );
     }
 

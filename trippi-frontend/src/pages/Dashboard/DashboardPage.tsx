@@ -38,7 +38,7 @@ export function DashboardPage() {
         setError(
           loadError instanceof Error
             ? loadError.message
-            : "Nao foi possivel carregar o dashboard.",
+            : "Não foi possível carregar o dashboard.",
         );
       } finally {
         if (isMounted) {

@@ -65,7 +65,7 @@ def create_finance_entry(
     except IntegrityError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Nao foi possivel criar o lancamento financeiro",
+            detail="Não foi possível criar o lançamento financeiro",
         ) from exc
 
     db.refresh(finance)
@@ -127,7 +127,7 @@ def update_finance_entry(
     except IntegrityError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Nao foi possivel atualizar o lancamento financeiro",
+            detail="Não foi possível atualizar o lançamento financeiro",
         ) from exc
 
     if finance is None:
@@ -369,7 +369,7 @@ def calculate_trip_financials(db: Session, trip_id: str | UUID) -> TripFinancial
     if not participant_rows:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="A viagem nao possui participantes cadastrados",
+            detail="A viagem não possui participantes cadastrados",
         )
 
     participant_ids = [row.id for row in participant_rows]
@@ -398,7 +398,7 @@ def calculate_trip_financials(db: Session, trip_id: str | UUID) -> TripFinancial
         if row.user_id not in paid_by_user:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Existe despesa registrada para um usuario que nao participa da viagem",
+                detail="Existe despesa registrada para um usuário que não participa da viagem",
             )
 
         paid_by_user[row.user_id] = paid_amount
@@ -415,7 +415,7 @@ def calculate_trip_financials(db: Session, trip_id: str | UUID) -> TripFinancial
         if expense.user_id not in paid_by_user:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Existe despesa registrada para um usuario que nao participa da viagem",
+                detail="Existe despesa registrada para um usuário que não participa da viagem",
             )
 
         shares = _split_amount_evenly(

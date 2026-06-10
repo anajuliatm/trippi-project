@@ -12,7 +12,7 @@ function parseApiError(error: unknown): never {
   if (axios.isAxiosError(error)) {
     if (!error.response) {
       throw new Error(
-        "Nao foi possivel conectar ao backend. Verifique se a API esta rodando e se o CORS esta liberado.",
+        "Não foi possível conectar ao backend. Verifique se a API está rodando e se o CORS está liberado.",
       );
     }
 

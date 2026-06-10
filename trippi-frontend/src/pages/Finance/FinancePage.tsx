@@ -120,7 +120,7 @@ export function FinancePage() {
         setError(
           loadError instanceof Error
             ? loadError.message
-            : "Nao foi possivel carregar o financeiro.",
+            : "Não foi possível carregar o financeiro.",
         );
       } finally {
         setLoading(false);
@@ -196,7 +196,7 @@ export function FinancePage() {
             <h1>Financeiro</h1>
           </header>
           <section className="settlement-empty">
-            <h3>Nao foi possivel carregar os dados.</h3>
+            <h3>Não foi possível carregar os dados.</h3>
             <p>{error}</p>
           </section>
         </div>

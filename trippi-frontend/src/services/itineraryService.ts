@@ -42,7 +42,7 @@ export async function createItineraryEntryRequest(
     const { data } = await api.post<ItineraryEntry>(`/itinerary/trip/${tripId}`, payload);
     return data;
   } catch (error) {
-    parseApiError(error, "Nao foi possivel criar a atividade do roteiro.");
+    parseApiError(error, "Não foi possível criar a atividade do roteiro.");
   }
 }
 
@@ -51,7 +51,7 @@ export async function getTripItineraryRequest(tripId: string): Promise<Itinerary
     const { data } = await api.get<ItineraryEntry[]>(`/itinerary/trip/${tripId}`);
     return data;
   } catch (error) {
-    parseApiError(error, "Nao foi possivel carregar o roteiro da viagem.");
+    parseApiError(error, "Não foi possível carregar o roteiro da viagem.");
   }
 }
 
@@ -68,7 +68,7 @@ export async function updateItineraryEntryRequest(
 
     return data;
   } catch (error) {
-    parseApiError(error, "Nao foi possivel atualizar a atividade do roteiro.");
+    parseApiError(error, "Não foi possível atualizar a atividade do roteiro.");
   }
 }
 
@@ -83,6 +83,6 @@ export async function deleteItineraryEntryRequest(
 
     return data;
   } catch (error) {
-    parseApiError(error, "Nao foi possivel remover a atividade do roteiro.");
+    parseApiError(error, "Não foi possível remover a atividade do roteiro.");
   }
 }
