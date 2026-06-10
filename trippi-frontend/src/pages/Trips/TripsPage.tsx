@@ -17,12 +17,12 @@ import "../../styles/trips-page.css";
 
 const TAB_OPTIONS: { label: string; value: TripStatus }[] = [
   { label: "Ativas", value: "active" },
-  { label: "Concluidas", value: "completed" },
+  { label: "Concluídas", value: "completed" },
 ];
 
 const STATUS_LABEL: Record<TripStatus, string> = {
   active: "Ativa",
-  completed: "Concluida",
+  completed: "Concluída",
 };
 
 function formatDate(date: string) {
