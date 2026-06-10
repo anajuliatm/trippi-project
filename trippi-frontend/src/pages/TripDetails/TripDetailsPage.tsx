@@ -1202,6 +1202,7 @@ export function TripDetailsPage() {
                   id="overview-end"
                   type="date"
                   value={overviewForm.endDate}
+                  min={overviewForm.departureDate || undefined}
                   onChange={(event) =>
                     setOverviewForm((previous) => ({ ...previous, endDate: event.target.value }))
                   }

@@ -15,6 +15,10 @@
   backdrop-filter: blur(3px);
 }
 
+.modal-form__row input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+}
+
 .app-modal__panel {
   position: relative;
   width: min(100%, 620px);

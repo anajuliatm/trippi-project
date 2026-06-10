@@ -487,6 +487,7 @@ export function TripsPage() {
                   id="trip-end-date"
                   type="date"
                   value={newTripForm.endDate}
+                  min={newTripForm.departureDate || undefined}
                   disabled={isSavingTrip}
                   onChange={(event) =>
                     setNewTripForm((previous) => ({ ...previous, endDate: event.target.value }))
