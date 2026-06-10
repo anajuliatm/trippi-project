@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { CalendarDays, Plus, Trash2, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Modal } from "../../components/common/Modal";
 import { useAuth } from "../../contexts/AuthContext";
 import { MainLayout } from "../../layouts/MainLayout";
@@ -51,6 +51,7 @@ interface NewTripForm {
 export function TripsPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState<TripStatus>("active");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSavingTrip, setIsSavingTrip] = useState(false);
@@ -113,6 +114,11 @@ export function TripsPage() {
     const interval = setInterval(() => { void silentRefresh()}, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    void loadTrips();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.key]);
 
   const filteredTrips = useMemo(() => {
     return trips.filter((trip) => trip.status === activeTab);

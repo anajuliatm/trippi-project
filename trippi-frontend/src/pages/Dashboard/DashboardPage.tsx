@@ -6,65 +6,51 @@ import { calculateDaysRemaining,
 } from "../../services/tripService";
 import { CountdownCard } from "../../components/dashboard/CountdownCard";
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import "../../styles/dashboard.css";
 
 export function DashboardPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [trips, setTrips] = useState<DashboardTrip[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let isMounted = true;
-
-    async function loadDashboard() {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const data = await getDashboardTripsRequest();
-
-        if (!isMounted) {
-          return;
-        }
-
-        setTrips(data);
-      } catch (loadError) {
-        if (!isMounted) {
-          return;
-        }
-
-        setError(
-          loadError instanceof Error
-            ? loadError.message
-            : "Não foi possível carregar o dashboard.",
-        );
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
+  async function loadDashboard() {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getDashboardTripsRequest();
+      setTrips(data);
+    } catch (loadError) {
+      setError(
+        loadError instanceof Error
+          ? loadError.message
+          : "Não foi possível carregar o dashboard.",
+      );
+    } finally {
+      setLoading(false);
     }
+  }
 
+  useEffect(() => {
     void loadDashboard();
 
     const interval = setInterval(async () => {
       try {
         const data = await getDashboardTripsRequest();
-        if (isMounted) {
-          setTrips(data);
-        }
-      } catch {
-
-      }
+        setTrips(data);
+      } catch {}
     }, 30000);
 
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
+    return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    void loadDashboard();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.key]);
 
   const activeTrips = useMemo(
     () => trips.filter((trip) => trip.status === "active"),

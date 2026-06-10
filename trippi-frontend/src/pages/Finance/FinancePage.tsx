@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { MainLayout } from "../../layouts/MainLayout";
 import {
@@ -76,11 +77,31 @@ function getSignedLabel(value: number) {
 
 export function FinancePage() {
   const { user } = useAuth();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState<FinanceTab>("summary");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tripSummaries, setTripSummaries] = useState<TripSummaryView[]>([]);
   const [settlements, setSettlements] = useState<SettlementView[]>([]);
+
+  async function silentRefresh() {
+    if (!user) return;
+    try {
+      const dashboardTrips = await getDashboardTripsRequest();
+      const activeTrips = dashboardTrips.filter((trip) => trip.status === "active");
+      const tripData = await Promise.all(
+        activeTrips.map(async (trip) => {
+          const [balances, tripSettlements] = await Promise.all([
+            getTripBalancesRequest(trip.id),
+            getTripSettlementsRequest(trip.id),
+          ]);
+          return { trip, balances, settlements: tripSettlements };
+        }),
+      );
+      setTripSummaries(tripData.map(({ trip, balances }) => mapTripSummary(trip, balances, user.id)));
+      setSettlements(tripData.flatMap(({ trip, settlements }) => mapTripSettlements(settlements, trip, user.id)));
+    } catch {}
+  }
 
   useEffect(() => {
     if (!user) {
@@ -129,44 +150,19 @@ export function FinancePage() {
 
     void loadFinance();
 
-    async function silentRefresh() {
-      if (!user) {
-        return
-      }
-
-      try {
-        const dashboardTrips = await getDashboardTripsRequest();
-        const activeTrips = dashboardTrips.filter((trip) => trip.status === "active");
-
-        const tripData = await Promise.all(
-          activeTrips.map(async (trip) => {
-            const [balances, settlements] = await Promise.all([
-              getTripBalancesRequest(trip.id),
-              getTripSettlementsRequest(trip.id),
-            ]);
-
-            return { trip, balances, settlements };
-          }),
-        );
-
-        const nextSummaries = tripData.map(({ trip, balances }) =>
-          mapTripSummary(trip, balances, user!.id),
-        );
-
-        const nextSettlements = tripData.flatMap(({ trip, settlements }) =>
-          mapTripSettlements(settlements, trip, user!.id),
-        );
-
-        setTripSummaries(nextSummaries);
-        setSettlements(nextSettlements);
-      } catch {
-      }
-
-    }
-
     const interval = setInterval(() => { void silentRefresh() }, 30000);
     return () => clearInterval(interval);
   }, [user]);
+
+  useEffect(() => {
+    async function reload() {
+      setLoading(true);
+      await silentRefresh();
+      setLoading(false);
+    }
+    void reload();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.key]);
 
   const groupedSettlements = useMemo(
     () => groupSettlementsByTrip(settlements, user?.id ?? ""),
