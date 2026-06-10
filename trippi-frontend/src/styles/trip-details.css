@@ -425,6 +425,10 @@
   border-color: rgba(74, 222, 128, 0.42);
 }
 
+.trip-budget-preview--negative {
+  border-color: rgba(248, 113, 113, 0.42);
+}
+
 .trip-budget-quick-actions {
   display: flex;
   flex-wrap: wrap;

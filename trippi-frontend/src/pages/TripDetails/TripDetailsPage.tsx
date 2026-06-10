@@ -1453,7 +1453,7 @@ export function TripDetailsPage() {
               ))}
             </div>
 
-            <div className="trip-budget-preview trip-budget-preview--final">
+            <div className={`trip-budget-preview trip-budget-preview--final ${(budgetNegativeMode || budgetAdjustment < 0) ? "trip-budget-preview--negative" : ""}`}>
               <p>Ajuste aplicado</p>
               <strong>
                 {budgetCents === 0
