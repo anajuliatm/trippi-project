@@ -785,7 +785,15 @@ export function TripDetailsPage() {
         ),
       );
 
+      const removedSelf = membersToRemove.some((p) => p.userId === user?.id);
+
       setIsOverviewEditOpen(false);
+
+      if (removedSelf) {
+        navigate("/trips");
+        return;
+      }
+
       await reloadTripDetails();
     } catch (saveError) {
       const message =
@@ -1339,7 +1347,7 @@ export function TripDetailsPage() {
         >
           <p>Tem certeza que deseja sair desta viagem?</p>
 
-          <p>Voce deixará de participar do grupo e precisará ser adicionado novamente para voltar.</p>
+          <p>Você deixará de participar do grupo e precisará ser adicionado novamente para voltar.</p>
 
           {leaveTripError ? (
             <div className="modal-callout modal-callout--error">{leaveTripError}</div>
