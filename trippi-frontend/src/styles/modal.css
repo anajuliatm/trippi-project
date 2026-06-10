@@ -100,6 +100,11 @@
   background: linear-gradient(150deg, rgba(239, 68, 68, 0.42), rgba(153, 27, 27, 0.64));
 }
 
+.modal-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .modal-form {
   display: grid;
   gap: 12px;

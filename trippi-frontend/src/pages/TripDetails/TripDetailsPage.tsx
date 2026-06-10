@@ -360,7 +360,7 @@ function FinanceSummary({
           </div>
         ) : (
           <div className="trip-finance__entries-empty">
-            <h3>Sem lancamentos para esta viagem.</h3>
+            <h3>Sem lançamentos para esta viagem.</h3>
           </div>
         )}
       </section>
@@ -475,7 +475,7 @@ function ItineraryTabs({
                   <h3>Nenhuma atividade neste dia</h3>
                   <ActionButtons modes={["add"]} onAction={() => onAddForDate(activeDate)} />
                 </div>
-                <p>Use o botao de adicionar para incluir itens no roteiro desta data.</p>
+                <p>Use o botão de adicionar para incluir itens no roteiro desta data.</p>
               </div>
             </article>
           )}
@@ -515,6 +515,7 @@ export function TripDetailsPage() {
   const [budgetDraftValue, setBudgetDraftValue] = useState("0");
   const [addingParticipant, setAddingParticipant] = useState(false);
   const [deleteTripError, setDeleteTripError] = useState<string | null>(null);
+  const [deleteTripConfirmed, setDeleteTripConfirmed] = useState(false);
   const [leaveTripError, setLeaveTripError] = useState<string | null>(null);
   const [leavingTrip, setLeavingTrip] = useState(false);
 
@@ -1261,17 +1262,18 @@ export function TripDetailsPage() {
           <Modal
             open={isTripDeleteOpen}
             title="Excluir viagem"
-            onClose={() => { setIsTripDeleteOpen(false); setDeleteTripError(null); }}
+            onClose={() => { setIsTripDeleteOpen(false); setDeleteTripError(null); setDeleteTripConfirmed(false); }}
             size="sm"
             footer={
               <>
-                <button type="button" className="modal-btn" onClick={() => {setIsTripDeleteOpen(false); setDeleteTripError(null); }}>
+                <button type="button" className="modal-btn" onClick={() => { setIsTripDeleteOpen(false); setDeleteTripError(null); setDeleteTripConfirmed(false); }}>
                   Cancelar
                 </button>
                 <button
                   type="button"
                   className="modal-btn modal-btn--danger"
                   onClick={() => void handleDeleteTrip()}
+                  disabled={!deleteTripConfirmed}
                 >
                   Excluir
                 </button>
@@ -1279,9 +1281,17 @@ export function TripDetailsPage() {
             }
           >
             <p>Tem certeza que deseja excluir a viagem?</p>
-            
-            <p>Esta ação <strong> removerá o grupo permanentemente para todos os participantes </strong> e não poderá ser desfeita. 
-            </p>
+
+            <p>Esta ação <strong>removerá o grupo permanentemente para todos os participantes</strong> e não poderá ser desfeita.</p>
+
+            <label style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "12px", cursor: "pointer", fontSize: "0.9rem" }}>
+              <input
+                type="checkbox"
+                checked={deleteTripConfirmed}
+                onChange={(e) => setDeleteTripConfirmed(e.target.checked)}
+              />
+              Entendo que essa ação é irreversível
+            </label>
 
             {deleteTripError && (
               <div className="modal-callout modal-callout--error">{deleteTripError}</div>

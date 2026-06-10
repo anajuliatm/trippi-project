@@ -229,7 +229,7 @@ export function TripsPage() {
       setAddTripModalError(
         saveError instanceof Error
           ? saveError.message
-          : "Nao foi possivel criar a viagem.",
+          : "Não foi possivel criar a viagem.",
       );
     } finally {
       setIsSavingTrip(false);

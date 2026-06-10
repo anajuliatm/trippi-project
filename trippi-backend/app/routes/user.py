@@ -111,7 +111,7 @@ def update_user(
     if str(current_user.id) != user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Voce nao pode editar este usuario",
+            detail="Voce não pode editar este usuario",
         )
 
     user = (

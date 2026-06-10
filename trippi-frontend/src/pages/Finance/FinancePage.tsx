@@ -364,7 +364,7 @@ function SettlementsTab({
       <div className="settlement-list">
         {settlements.length === 0 ? (
           <div className="settlement-empty">
-            <h3>Sem sugestoes de acerto nas viagens ativas.</h3>
+            <h3>Sem sugestões de acerto nas viagens ativas.</h3>
           </div>
         ) : (
           settlements.map((settlement) => {
