@@ -1249,6 +1249,7 @@ export function TripDetailsPage() {
                     placeholder="email@exemplo.com"
                     value={participantInput}
                     onChange={(event) => setParticipantInput(event.target.value)}
+                    onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void handleAddParticipant(); } }}
                   />
                   <button type="button" className="modal-btn" onClick={() => void handleAddParticipant()} disabled={addingParticipant}>
                     {addingParticipant ? "Verificando..." : "Adicionar"}

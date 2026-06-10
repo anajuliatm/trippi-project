@@ -152,7 +152,7 @@ export function TripsPage() {
     }
 
     if (!user) {
-      setError("Sessao invalida. Faca login novamente.");
+      setError("Sessão inválida. Faça login novamente.");
       return;
     }
 
@@ -535,6 +535,7 @@ export function TripsPage() {
                     value={newParticipantName}
                     disabled={isSavingTrip}
                     onChange={(event) => setNewParticipantName(event.target.value)}
+                    onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void handleAddParticipant(); } }}
                   />
                   <button type="button" className="modal-btn" onClick={() => void handleAddParticipant()} disabled={addingParticipant || isSavingTrip}>
                     {addingParticipant ? "Verificando..." : "Adicionar"}

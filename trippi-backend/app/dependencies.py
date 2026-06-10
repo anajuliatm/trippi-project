@@ -68,7 +68,7 @@ def get_current_user(
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Usuário não encontrado",
+            detail="Usuário não encontrado.",
         )
 
     return user

@@ -67,7 +67,7 @@ def get_user_by_email(
     if not user:
         raise HTTPException(
             status_code=404,
-            detail="Usuário não encontrado"
+            detail="Usuário não encontrado."
         )
 
     return user
@@ -91,7 +91,7 @@ def get_user(
     if not user:
         raise HTTPException(
             status_code=404,
-            detail="Usuário não encontrado"
+            detail="Usuário não encontrado."
         )
 
     return user
@@ -123,7 +123,7 @@ def update_user(
     if not user:
         raise HTTPException(
             status_code=404,
-            detail="Usuário não encontrado"
+            detail="Usuário não encontrado."
         )
 
     conflict_filters = []
@@ -189,7 +189,7 @@ def delete_user(
     if not user:
         raise HTTPException(
             status_code=404,
-            detail="Usuário não encontrado"
+            detail="Usuário não encontrado."
         )
 
     db.delete(user)
