@@ -55,6 +55,13 @@ function formatSignedCurrency(value: number) {
   return `${sign}${formatCurrency(Math.abs(value))}`;
 }
 
+function formatCentsDisplay(cents: number): string {
+  return new Intl.NumberFormat("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Math.abs(cents) / 100);
+}
+
 function getTripDateRange(startDate: string, endDate: string) {
   const dates: string[] = [];
   const current = new Date(`${startDate}T00:00:00`);
@@ -103,7 +110,6 @@ interface OverviewFormState {
 interface ItineraryFormState {
   date: string;
   time: string;
-  amount: string;
   title: string;
   description: string;
   location: string;
@@ -512,7 +518,9 @@ export function TripDetailsPage() {
 
   const [participantsUsers, setParticipantsUsers] = useState<TripParticipant[]>([]);
   const [participantInput, setParticipantInput] = useState("");
-  const [budgetDraftValue, setBudgetDraftValue] = useState("0");
+  const [budgetCents, setBudgetCents] = useState(0);
+  const [budgetNegativeMode, setBudgetNegativeMode] = useState(false);
+  const [itineraryCents, setItineraryCents] = useState(0);
   const [addingParticipant, setAddingParticipant] = useState(false);
   const [deleteTripError, setDeleteTripError] = useState<string | null>(null);
   const [deleteTripConfirmed, setDeleteTripConfirmed] = useState(false);
@@ -524,7 +532,6 @@ export function TripDetailsPage() {
   const [itineraryForm, setItineraryForm] = useState<ItineraryFormState>({
     date: "",
     time: "09:00",
-    amount: "0",
     title: "",
     description: "",
     location: "",
@@ -640,10 +647,10 @@ export function TripDetailsPage() {
     return getTripDateRange(tripData.departureDate, tripData.endDate);
   }, [tripData]);
 
-  const budgetAdjustment = useMemo(() => {
-    const parsedValue = Number(budgetDraftValue);
-    return Number.isNaN(parsedValue) ? 0 : parsedValue;
-  }, [budgetDraftValue]);
+  const budgetAdjustment = useMemo(
+    () => (budgetNegativeMode ? -1 : 1) * budgetCents / 100,
+    [budgetCents, budgetNegativeMode],
+  );
 
   const budgetPreview = useMemo(() => {
     if (!tripData) {
@@ -815,7 +822,8 @@ export function TripDetailsPage() {
       return;
     }
 
-    setBudgetDraftValue("0");
+    setBudgetCents(0);
+    setBudgetNegativeMode(false);
     setIsBudgetEditOpen(true);
   }
 
@@ -846,12 +854,12 @@ export function TripDetailsPage() {
     setItineraryForm({
       date: initialDate,
       time: "09:00",
-      amount: "0",
       title: "",
       description: "",
       location: "",
       notes: "",
     });
+    setItineraryCents(0);
     setIsItineraryModalOpen(true);
   }
 
@@ -861,12 +869,12 @@ export function TripDetailsPage() {
     setItineraryForm({
       date,
       time: activity.time,
-      amount: String(activity.amount),
       title: activity.title,
       description: activity.description,
       location: activity.location,
       notes: activity.notes,
     });
+    setItineraryCents(Math.round(activity.amount * 100));
     setIsItineraryModalOpen(true);
   }
 
@@ -882,7 +890,6 @@ export function TripDetailsPage() {
 
     setItineraryModalError(null);
 
-    const parsedAmount = Number(itineraryForm.amount);
     const isEditing = itineraryMode === "edit" && editingActivityRef;
     const payload = {
       trip_id: tripData.id,
@@ -892,7 +899,7 @@ export function TripDetailsPage() {
       activity_date: itineraryForm.date,
       activity_time: itineraryForm.time || null,
       notes: isEditing ? itineraryForm.notes : (itineraryForm.notes || null),
-      estimated_cost: Number.isNaN(parsedAmount) ? 0 : Math.max(parsedAmount, 0),
+      estimated_cost: itineraryCents / 100,
     };
 
     try {
@@ -1024,6 +1031,38 @@ export function TripDetailsPage() {
       );
     } finally {
       setLeavingTrip(false);
+    }
+  }
+
+  function handleBudgetKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key >= "0" && e.key <= "9") {
+      e.preventDefault();
+      const next = budgetCents * 10 + Number(e.key);
+      if (next <= 99999999) setBudgetCents(next);
+    } else if (e.key === "Backspace") {
+      e.preventDefault();
+      setBudgetCents(Math.floor(budgetCents / 10));
+    } else if (e.key === "-") {
+      e.preventDefault();
+      setBudgetNegativeMode((prev) => !prev);
+    }
+  }
+
+  function applyQuickBudget(delta: number) {
+    const current = (budgetNegativeMode ? -1 : 1) * budgetCents;
+    const next = current + delta;
+    setBudgetNegativeMode(next < 0);
+    setBudgetCents(Math.abs(next));
+  }
+
+  function handleItineraryAmountKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key >= "0" && e.key <= "9") {
+      e.preventDefault();
+      const next = itineraryCents * 10 + Number(e.key);
+      if (next <= 99999999) setItineraryCents(next);
+    } else if (e.key === "Backspace") {
+      e.preventDefault();
+      setItineraryCents(Math.floor(itineraryCents / 10));
     }
   }
 
@@ -1377,13 +1416,17 @@ export function TripDetailsPage() {
 
             <div className="modal-form__row">
               <label htmlFor="budget-total">Adicionar/Remover quantidade</label>
-              <input
-                id="budget-total"
-                type="number"
-                step="0.01"
-                value={budgetDraftValue}
-                onChange={(event) => setBudgetDraftValue(event.target.value)}
-              />
+              <div className="currency-input">
+                <span className="currency-input__prefix">{budgetNegativeMode ? "- R$" : "R$"}</span>
+                <input
+                  id="budget-total"
+                  type="text"
+                  inputMode="numeric"
+                  value={formatCentsDisplay(budgetCents)}
+                  onChange={() => {}}
+                  onKeyDown={handleBudgetKeyDown}
+                />
+              </div>
             </div>
 
             <div className="trip-budget-quick-actions">
@@ -1392,7 +1435,7 @@ export function TripDetailsPage() {
                   key={`plus-${quickValue}`}
                   type="button"
                   className="modal-btn"
-                  onClick={() => setBudgetDraftValue(String(budgetAdjustment + quickValue))}
+                  onClick={() => applyQuickBudget(quickValue * 100)}
                 >
                   + {formatCurrency(quickValue)}
                 </button>
@@ -1403,7 +1446,7 @@ export function TripDetailsPage() {
                   key={`minus-${quickValue}`}
                   type="button"
                   className="modal-btn"
-                  onClick={() => setBudgetDraftValue(String(budgetAdjustment - quickValue))}
+                  onClick={() => applyQuickBudget(-quickValue * 100)}
                 >
                   - {formatCurrency(quickValue)}
                 </button>
@@ -1412,7 +1455,11 @@ export function TripDetailsPage() {
 
             <div className="trip-budget-preview trip-budget-preview--final">
               <p>Ajuste aplicado</p>
-              <strong>{formatSignedCurrency(budgetAdjustment)}</strong>
+              <strong>
+                {budgetCents === 0
+                  ? `${budgetNegativeMode ? "-" : "+"}${formatCurrency(0)}`
+                  : formatSignedCurrency(budgetAdjustment)}
+              </strong>
             </div>
 
             <div className="trip-budget-preview trip-budget-preview--final">
@@ -1477,17 +1524,18 @@ export function TripDetailsPage() {
               </div>
 
               <div className="modal-form__row">
-                <label htmlFor="itinerary-amount">Valor em R$</label>
-                <input
-                  id="itinerary-amount"
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  value={itineraryForm.amount}
-                  onChange={(event) =>
-                    setItineraryForm((previous) => ({ ...previous, amount: event.target.value }))
-                  }
-                />
+                <label htmlFor="itinerary-amount">Valor</label>
+                <div className="currency-input">
+                  <span className="currency-input__prefix">R$</span>
+                  <input
+                    id="itinerary-amount"
+                    type="text"
+                    inputMode="numeric"
+                    value={formatCentsDisplay(itineraryCents)}
+                    onChange={() => {}}
+                    onKeyDown={handleItineraryAmountKeyDown}
+                  />
+                </div>
               </div>
             </div>
 
