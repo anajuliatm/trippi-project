@@ -215,6 +215,35 @@
   flex: 1;
 }
 
+.currency-input {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  background: rgba(15, 27, 45, 0.62);
+  padding: 10px 12px;
+}
+
+.currency-input__prefix {
+  color: rgba(191, 219, 254, 0.7);
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.currency-input input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  outline: none;
+  padding: 0;
+  width: 100%;
+}
+
 @media (max-width: 640px) {
   .app-modal {
     padding: 10px;
