@@ -1,4 +1,4 @@
-import { ShieldCheck, LockKeyhole, Mail, Save, UserRound } from "lucide-react";
+import { LockKeyhole, Mail, Save, UserRound, Eye, EyeOff } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { MainLayout } from "../../layouts/MainLayout";
@@ -15,6 +15,8 @@ export function ProfilePage() {
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState<"success" | "error" | null>(null);
   const [saving, setSaving] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -118,10 +120,6 @@ export function ProfilePage() {
             </div>
             <strong>{username}</strong>
             <span>{email}</span>
-            <div className="profile-summary-card__meta">
-              <p>Senha</p>
-              <strong>********</strong>
-            </div>
           </aside>
 
           <section className="profile-form-card">
@@ -157,11 +155,19 @@ export function ProfilePage() {
                   <div className="profile-form__input-wrapper">
                     <LockKeyhole size={18} />
                     <input
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       value={password}
                       onChange={(event) => setPassword(event.target.value)}
                       placeholder="********"
                     />
+                    <button
+                      type="button"
+                      className="login-form__password-toggle"
+                      aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                      onClick={() => setShowPassword((previous) => !previous)}
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
                   </div>
                 </label>
 
@@ -170,11 +176,19 @@ export function ProfilePage() {
                   <div className="profile-form__input-wrapper">
                     <LockKeyhole size={18} />
                     <input
-                      type="password"
+                      type={showConfirmPassword ? "text" : "password"}
                       value={confirmPassword}
                       onChange={(event) => setConfirmPassword(event.target.value)}
                       placeholder="********"
                     />
+                    <button
+                      type="button"
+                      className="login-form__password-toggle"
+                      aria-label={showConfirmPassword ? "Ocultar senha" : "Mostrar senha"}
+                      onClick={() => setShowConfirmPassword((previous) => !previous)}
+                    >
+                      {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
                   </div>
                 </label>
               </div>
