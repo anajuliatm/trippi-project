@@ -140,6 +140,7 @@
   border-radius: 14px;
   padding: 12px 14px;
   font-weight: 600;
+  white-space: pre-line;
 }
 
 .profile-form__message.is-success {

@@ -42,14 +42,37 @@ export function ProfilePage() {
       return;
     }
 
-    if (!passwordsMatch) {
-      setMessage("As senhas precisam ser iguais.");
-      setMessageType("error");
-      return;
+    const frontendErrors: string[] = [];
+
+    const trimmedUsername = username.trim();
+    if (!trimmedUsername) {
+      frontendErrors.push("O username não pode conter apenas espaços.");
+    } else if (trimmedUsername.length < 3) {
+      frontendErrors.push("O username deve ter pelo menos 3 caracteres.");
+    } else if (trimmedUsername.length > 50) {
+      frontendErrors.push("O username deve ter no máximo 50 caracteres.");
     }
 
-    if (password && !password.trim()) {
-      setMessage("A senha não pode conter apenas espaços.");
+    let passwordValid = true;
+    if (password) {
+      if (!password.trim()) {
+        frontendErrors.push("A senha não pode conter apenas espaços.");
+        passwordValid = false;
+      } else if (password.length < 4) {
+        frontendErrors.push("A senha deve ter pelo menos 4 caracteres.");
+        passwordValid = false;
+      } else if (password.length > 128) {
+        frontendErrors.push("A senha deve ter no máximo 128 caracteres.");
+        passwordValid = false;
+      }
+    }
+
+    if (passwordValid && !passwordsMatch) {
+      frontendErrors.push("As senhas precisam ser iguais.");
+    }
+
+    if (frontendErrors.length > 0) {
+      setMessage(frontendErrors.join("\n"));
       setMessageType("error");
       return;
     }

@@ -26,13 +26,13 @@ function parseApiError(error: unknown): never {
       const message = detail
         .map((item) => {
           if (typeof item?.msg === "string") {
-            return item.msg;
+            return item.msg.replace(/^value error,\s*/i, "").trim();
           }
 
           return null;
         })
         .filter((item): item is string => Boolean(item))
-        .join(" ");
+        .join("\n");
 
       if (message) {
         throw new Error(message);
