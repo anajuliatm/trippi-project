@@ -11,8 +11,8 @@ O repositorio esta organizado em dois modulos:
 
 ## Tecnologias
 
-- Frontend: React 19, TypeScript, Vite, React Router, Zustand, Axios, Framer Motion, Lucide React
-- Backend: FastAPI, Uvicorn, SQLAlchemy, Psycopg2, Python Dotenv, Pydantic
+- Frontend: React 19, TypeScript, Vite, React Router, Zustand, Axios, Framer Motion, Lucide React, Socket.IO Client
+- Backend: FastAPI, Uvicorn, SQLAlchemy, Psycopg2, Python Dotenv, Pydantic, python-socketio
 
 ## Pre-requisitos
 
@@ -71,7 +71,7 @@ DATABASE_URL=postgresql://usuario:senha@host:porta/database
 5. Rode a API:
 
 ```bash
-uvicorn app.main:app --reload
+uvicorn app.main:socket_app --reload
 ```
 
 6. Acesse a aplicacao e a documentacao:
@@ -113,7 +113,7 @@ http://localhost:5173
 
 Dentro de `trippi-backend/`:
 
-- `uvicorn app.main:app --reload`: inicia a API em modo de desenvolvimento.
+- `uvicorn app.main:socket_app --reload`: inicia a API em modo de desenvolvimento.
 
 ### Frontend
 
