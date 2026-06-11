@@ -10,6 +10,7 @@ from app.schemas.finance import (
 )
 from app.schemas.trip import TripCreate, TripUpdate, TripResponse
 from app.services import finance_service, trip_service
+from app.socket import sio
 
 router = APIRouter(prefix="/trips", tags=["Trips"])
 
@@ -90,27 +91,32 @@ def get_trip_settlements(trip_id: str, current_user: User = Depends(get_current_
     summary="Atualizar viagem",
     description="Atualiza parcialmente uma viagem existente."
 )
-def update_trip(
+async def update_trip(
     trip_id: str,
     trip_data: TripUpdate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    return trip_service.update_trip(
+    result = trip_service.update_trip(
         db=db,
         trip_id=trip_id,
         trip_data=trip_data,
         user_id=str(current_user.id)
     )
+    await sio.emit("trip_updated", {}, room=trip_id)
+    return result
+
 
 @router.delete(
     "/{trip_id}",
     summary="Excluir viagem",
     description="Remove uma viagem pelo identificador."
 )
-def delete_trip(
+async def delete_trip(
     trip_id: str,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    return trip_service.delete_trip(db=db, trip_id=trip_id, user_id=str(current_user.id))
+    result = trip_service.delete_trip(db=db, trip_id=trip_id, user_id=str(current_user.id))
+    await sio.emit("trip_updated", {}, room=trip_id)
+    return result

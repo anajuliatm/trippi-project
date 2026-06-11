@@ -8,3 +8,4 @@ email-validator
 passlib[bcrypt]
 bcrypt<5
 python-jose[cryptography]
+python-socketio[asgi]

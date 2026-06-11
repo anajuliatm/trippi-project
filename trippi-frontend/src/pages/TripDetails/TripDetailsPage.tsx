@@ -32,6 +32,7 @@ import {
 } from "../../services/memberService";
 import { getUserByEmailRequest, getUsersMapRequest } from "../../services/userService";
 import "../../styles/trip-details.css";
+import { getSocket } from "../../services/socketService";
 
 const ITINERARY_FINANCE_PREFIX = "[itinerary-expense:";
 
@@ -635,8 +636,14 @@ export function TripDetailsPage() {
       }
     }
 
-    const interval = setInterval(() => { void silentRefresh()}, 20000);
-    return () => clearInterval(interval);
+    const socket = getSocket();
+    socket.emit("join_trip", tripId);
+    socket.on("trip_updated", () => { void silentRefresh(); });
+
+    return () => {
+      socket.emit("leave_trip", tripId);
+      socket.off("trip_updated");
+    };
   }, [tripId]);
 
   const itineraryDates = useMemo(() => {
@@ -918,7 +925,7 @@ export function TripDetailsPage() {
       setIsItineraryModalOpen(false);
       await reloadTripDetails();
     } catch (saveError) {
-      setError(
+      setItineraryModalError(
         saveError instanceof Error
           ? saveError.message
           : "Não foi possível salvar o item do roteiro.",
@@ -1490,7 +1497,7 @@ export function TripDetailsPage() {
         >
           <form className="modal-form" onSubmit={(event) => event.preventDefault()}>
             {itineraryModalError ? (
-              <p className="modal-callout">{itineraryModalError}</p>
+              <div className="modal-callout modal-callout--error">{itineraryModalError}</div>
             ) : null}
 
             <div className="modal-inline-fields">

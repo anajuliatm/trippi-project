@@ -10,6 +10,7 @@ from app.schemas.finance import (
     FinanceUpdate,
     FinanceResponse
 )
+from app.socket import sio
 
 router = APIRouter(
     prefix="/finance",
@@ -22,18 +23,20 @@ router = APIRouter(
     summary="Criar lançamento financeiro",
     description="Cria um lançamento financeiro vinculado a uma viagem."
 )
-def create_entry(
+async def create_entry(
     entry: FinanceCreate,
     trip_id: str = Path(..., description="ID da viagem"),
     user_id: str = Path(..., description="ID do usuário"),
     db: Session = Depends(get_db)
 ):
-    return finance_service.create_finance_entry(
+    result = finance_service.create_finance_entry(
         db=db,
         trip_id=trip_id,
         user_id=user_id,
         entry=entry,
     )
+    await sio.emit("trip_updated", {}, room=trip_id)
+    return result
 
 
 @router.get(
@@ -85,35 +88,39 @@ def get_trip_finance(
     summary="Atualizar lançamento financeiro",
     description="Atualiza parcialmente um lançamento financeiro existente."
 )
-def update_finance(
+async def update_finance(
     finance_data: FinanceUpdate,
     trip_id: str = Path(..., description="ID da viagem"),
     user_id: str = Path(..., description="ID do usuário"),
     finance_id: str = Path(..., description="ID do lançamento financeiro"),
     db: Session = Depends(get_db)
 ):
-    return finance_service.update_finance_entry(
+    result = finance_service.update_finance_entry(
         db=db,
         trip_id=trip_id,
         user_id=user_id,
         finance_id=finance_id,
         finance_data=finance_data,
     )
+    await sio.emit("trip_updated", {}, room=trip_id)
+    return result
 
 @router.delete(
     "/trip/{trip_id}/user/{user_id}/entry/{finance_id}",
     summary="Excluir lançamento financeiro",
     description="Remove um lançamento financeiro pelo identificador."
 )
-def delete_finance(
+async def delete_finance(
     trip_id: str = Path(..., description="ID da viagem"),
     user_id: str = Path(..., description="ID do usuário"),
     finance_id: str = Path(..., description="ID do lançamento financeiro"),
     db: Session = Depends(get_db)
 ):
-    return finance_service.delete_finance_entry(
+    result = finance_service.delete_finance_entry(
         db=db,
         trip_id=trip_id,
         user_id=user_id,
         finance_id=finance_id,
     )
+    await sio.emit("trip_updated", {}, room=trip_id)
+    return result

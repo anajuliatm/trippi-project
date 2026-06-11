@@ -10,6 +10,7 @@ from app.schemas.itinerary import (
     ItineraryResponse
 )
 from app.services import finance_service, trip_service
+from app.socket import sio
 
 router = APIRouter(
     prefix="/itinerary",
@@ -22,7 +23,7 @@ router = APIRouter(
     summary="Criar atividade",
     description="Cria uma nova atividade vinculada a uma viagem."
 )
-def create_activity(
+async def create_activity(
     activity: ItineraryCreate,
     trip_id: str = Path(..., description="ID da viagem"),
     current_user: User = Depends(get_current_user),
@@ -47,6 +48,7 @@ def create_activity(
     )
 
     db.commit()
+    await sio.emit("trip_updated", {}, room=trip_id)
 
     db.refresh(new_activity)
 
@@ -111,7 +113,7 @@ def get_activity_by_trip_and_id(
     summary="Atualizar atividade",
     description="Atualiza parcialmente uma atividade de uma viagem."
 )
-def update_activity(
+async def update_activity(
     activity_data: ItineraryUpdate,
     trip_id: str = Path(..., description="ID da viagem"),
     activity_id: str = Path(..., description="ID da atividade"),
@@ -163,6 +165,7 @@ def update_activity(
     )
 
     db.commit()
+    await sio.emit("trip_updated", {}, room=trip_id)
 
     db.refresh(activity)
 
@@ -173,7 +176,7 @@ def update_activity(
     summary="Excluir atividade",
     description="Remove uma atividade de uma viagem."
 )
-def delete_activity(
+async def delete_activity(
     trip_id: str = Path(..., description="ID da viagem"),
     activity_id: str = Path(..., description="ID da atividade"),
     current_user: User = Depends(get_current_user),
@@ -204,5 +207,6 @@ def delete_activity(
     )
 
     db.commit()
+    await sio.emit("trip_updated", {}, room=trip_id)
 
     return {"message": "Atividade do roteiro deletada "}

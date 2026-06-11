@@ -7,6 +7,7 @@ from app.schemas.trip_member import (
     TripMemberResponse
 )
 from app.services import trip_member_service
+from app.socket import sio
 
 router = APIRouter(
     prefix="/trip_member",
@@ -19,18 +20,20 @@ router = APIRouter(
     summary="Adicionar membro",
     description="Adiciona um membro a uma viagem."
 )
-def add_member(
+async def add_member(
     member: TripMemberCreate,
     trip_id: str = Path(..., description="ID da viagem"),
     user_id: str = Path(..., description="ID do usuário"),
     db: Session = Depends(get_db)
 ):
-    return trip_member_service.add_member(
+    result = trip_member_service.add_member(
         db=db,
         trip_id=trip_id,
         user_id=user_id,
         member=member,
     )
+    await sio.emit("trip_updated", {}, room=trip_id)
+    return result
 
 
 @router.get(
@@ -51,13 +54,15 @@ def get_trip_members(
     summary="Remover membro",
     description="Remove um membro de uma viagem."
 )
-def delete_member(
+async def delete_member(
     trip_id: str = Path(..., description="ID da viagem"),
     user_id: str = Path(..., description="ID do usuário"),
     db: Session = Depends(get_db)
 ):
-    return trip_member_service.delete_member(
+    result = trip_member_service.delete_member(
         db=db,
         trip_id=trip_id,
         user_id=user_id,
     )
+    await sio.emit("trip_updated", {}, room=trip_id)
+    return result
