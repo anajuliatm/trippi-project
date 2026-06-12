@@ -25,6 +25,33 @@ export function LoginPage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
+
+    if (mode === "register") {
+      const frontendErrors: string[] = [];
+
+      const trimmedUsername = username.trim();
+      if (!trimmedUsername) {
+        frontendErrors.push("O username não pode conter apenas espaços.");
+      } else if (trimmedUsername.length < 3) {
+        frontendErrors.push("O username deve ter pelo menos 3 caracteres.");
+      } else if (trimmedUsername.length > 50) {
+        frontendErrors.push("O username deve ter no máximo 50 caracteres.");
+      }
+
+      if (!password.trim()) {
+        frontendErrors.push("A senha não pode conter apenas espaços.");
+      } else if (password.length < 4) {
+        frontendErrors.push("A senha deve ter pelo menos 4 caracteres.");
+      } else if (password.length > 128) {
+        frontendErrors.push("A senha deve ter no máximo 128 caracteres.");
+      }
+
+      if (frontendErrors.length > 0) {
+        setError(frontendErrors.join("\n"));
+        return;
+      }
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -57,7 +84,7 @@ export function LoginPage() {
             role="tab"
             aria-selected={mode === "login"}
             className={`login-card__tab${mode === "login" ? " is-active" : ""}`}
-            onClick={() => setMode("login")}
+            onClick={() => { setMode("login"); setError(""); setShowPassword(false); }}
           >
             Entrar
           </button>
@@ -66,7 +93,7 @@ export function LoginPage() {
             role="tab"
             aria-selected={mode === "register"}
             className={`login-card__tab${mode === "register" ? " is-active" : ""}`}
-            onClick={() => setMode("register")}
+            onClick={() => { setMode("register"); setError(""); setShowPassword(false); }}
           >
             Cadastrar
           </button>

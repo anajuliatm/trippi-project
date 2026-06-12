@@ -126,27 +126,33 @@ def update_user(
             detail="Usuário não encontrado."
         )
 
-    conflict_filters = []
+    conflict_errors = []
 
     if user_data.email is not None:
-      conflict_filters.append(func.lower(User.email) == func.lower(user_data.email))
-
-    if user_data.username is not None:
-      conflict_filters.append(func.lower(User.username) == func.lower(user_data.username))
-
-    if conflict_filters:
-        existing_user = (
+        email_taken = (
             db.query(User)
             .filter(User.id != user.id)
-            .filter(or_(*conflict_filters))
+            .filter(func.lower(User.email) == func.lower(user_data.email))
             .first()
         )
+        if email_taken:
+            conflict_errors.append("Email já cadastrado.")
 
-        if existing_user:
-            raise HTTPException(
-                status_code=400,
-                detail="Email ou username já cadastrados",
-            )
+    if user_data.username is not None:
+        username_taken = (
+            db.query(User)
+            .filter(User.id != user.id)
+            .filter(func.lower(User.username) == func.lower(user_data.username))
+            .first()
+        )
+        if username_taken:
+            conflict_errors.append("Username já cadastrado.")
+
+    if conflict_errors:
+        raise HTTPException(
+            status_code=400,
+            detail="\n".join(conflict_errors),
+        )
 
     if user_data.username is not None:
         user.username = user_data.username
@@ -163,7 +169,7 @@ def update_user(
         db.rollback()
         raise HTTPException(
             status_code=400,
-            detail="Email ou username já cadastrados",
+            detail="Email ou username já cadastrados.",
         )
 
     db.refresh(user)

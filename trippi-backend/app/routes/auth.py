@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import func, or_
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.core.security import create_access_token, hash_password, verify_password
@@ -18,21 +18,26 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
     summary="Cadastrar usuário",
 )
 def register(payload: RegisterRequest, db: Session = Depends(get_db)):
-    existing_user = (
+    email_taken = (
         db.query(User)
-        .filter(
-            or_(
-                func.lower(User.email) == func.lower(payload.email),
-                func.lower(User.username) == func.lower(payload.username),
-            )
-        )
+        .filter(func.lower(User.email) == func.lower(payload.email))
+        .first()
+    )
+    username_taken = (
+        db.query(User)
+        .filter(func.lower(User.username) == func.lower(payload.username))
         .first()
     )
 
-    if existing_user:
+    conflict_errors = []
+    if email_taken:
+        conflict_errors.append("Email já cadastrado.")
+    if username_taken:
+        conflict_errors.append("Username já cadastrado.")
+    if conflict_errors:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email ou username já cadastrados",
+            detail="\n".join(conflict_errors),
         )
 
     new_user = User(
@@ -65,7 +70,7 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
     if not user or not verify_password(payload.password, user.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Email ou senha inválidos",
+            detail="Email ou senha incorretos.",
         )
 
     access_token = create_access_token(str(user.id))
