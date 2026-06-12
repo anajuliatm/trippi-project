@@ -107,7 +107,7 @@ def delete_member(db: Session, trip_id: str, user_id: str) -> dict[str, str]:
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="ão foi possível remover o membro da viagem",
+            detail="Não foi possível remover o membro da viagem",
         ) from exc
 
     return {"message": "Membro removido"}
