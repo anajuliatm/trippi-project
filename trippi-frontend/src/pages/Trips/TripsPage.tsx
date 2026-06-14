@@ -434,6 +434,7 @@ export function TripsPage() {
                 id="trip-destination"
                 type="text"
                 placeholder="Ex.: Santiago"
+                maxLength={255}
                 value={newTripForm.destination}
                 disabled={isSavingTrip}
                 onChange={(event) =>

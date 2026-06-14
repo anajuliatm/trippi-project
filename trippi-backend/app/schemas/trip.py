@@ -11,6 +11,16 @@ class TripCreate(BaseModel):
     return_date: date
     budget: Decimal = 0
 
+    @field_validator('destination')
+    @classmethod
+    def destination_valido(cls, v):
+        stripped = v.strip()
+        if not stripped:
+            raise ValueError('O destino não pode estar vazio.')
+        if len(stripped) > 255:
+            raise ValueError('O destino deve ter no máximo 255 caracteres.')
+        return stripped
+
     @field_validator('budget')
     @classmethod
     def budget_nao_negativo(cls, v):
@@ -31,6 +41,18 @@ class TripUpdate(BaseModel):
     return_date: Optional[date] = None
     is_active: Optional[bool] = None
     budget: Optional[float] = None
+
+    @field_validator('destination')
+    @classmethod
+    def destination_valido(cls, v):
+        if v is None:
+            return v
+        stripped = v.strip()
+        if not stripped:
+            raise ValueError('O destino não pode estar vazio.')
+        if len(stripped) > 255:
+            raise ValueError('O destino deve ter no máximo 255 caracteres.')
+        return stripped
 
     @field_validator('budget')
     @classmethod

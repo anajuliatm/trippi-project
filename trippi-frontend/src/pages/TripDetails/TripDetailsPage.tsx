@@ -1212,6 +1212,7 @@ export function TripDetailsPage() {
               <input
                 id="overview-destination"
                 type="text"
+                maxLength={255}
                 value={overviewForm.destination}
                 onChange={(event) =>
                   setOverviewForm((previous) => ({ ...previous, destination: event.target.value }))
