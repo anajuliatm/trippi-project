@@ -27,6 +27,7 @@ async def create_entry(
     entry: FinanceCreate,
     trip_id: str = Path(..., description="ID da viagem"),
     user_id: str = Path(..., description="ID do usuário"),
+    _: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     result = finance_service.create_finance_entry(

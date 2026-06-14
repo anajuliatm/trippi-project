@@ -5,7 +5,6 @@ from datetime import date, datetime
 from decimal import Decimal
 
 class TripCreate(BaseModel):
-    owner_id: UUID
     destination: str
     image_url: str | None = None
     departure_date: date

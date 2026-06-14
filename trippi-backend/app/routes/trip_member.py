@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, Path
 from sqlalchemy.orm import Session
 
-from app.dependencies import get_db
+from app.dependencies import get_current_user, get_db
+from app.models.user import User
 from app.schemas.trip_member import (
     TripMemberCreate,
     TripMemberResponse
@@ -24,6 +25,7 @@ async def add_member(
     member: TripMemberCreate,
     trip_id: str = Path(..., description="ID da viagem"),
     user_id: str = Path(..., description="ID do usuário"),
+    _: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     result = trip_member_service.add_member(

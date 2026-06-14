@@ -20,8 +20,8 @@ router = APIRouter(prefix="/trips", tags=["Trips"])
     summary="Criar viagem",
     description="Cria uma nova viagem."
 )
-def create_trip(trip: TripCreate, db: Session = Depends(get_db)):
-    return trip_service.create_trip(db=db, trip_data=trip)
+def create_trip(trip: TripCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    return trip_service.create_trip(db=db, trip_data=trip, owner_id=current_user.id)
 
 
 @router.get(

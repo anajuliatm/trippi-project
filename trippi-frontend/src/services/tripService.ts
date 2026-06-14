@@ -19,7 +19,6 @@ export type TripResponse = {
 };
 
 export type CreateTripPayload = {
-  owner_id: string;
   destination: string;
   image_url?: string | null;
   departure_date: string;

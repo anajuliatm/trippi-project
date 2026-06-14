@@ -16,9 +16,9 @@ from app.services import finance_service
 CENT = Decimal("0.01")
 
 
-def create_trip(db: Session, trip_data: TripCreate) -> Trip:
+def create_trip(db: Session, trip_data: TripCreate, owner_id: UUID) -> Trip:
     new_trip = Trip(
-        owner_id=trip_data.owner_id,
+        owner_id=owner_id,
         destination=trip_data.destination,
         image_url=trip_data.image_url,
         departure_date=trip_data.departure_date,
@@ -29,7 +29,7 @@ def create_trip(db: Session, trip_data: TripCreate) -> Trip:
 
     owner_member = TripMember(
         trip_id=new_trip.id,
-        user_id=trip_data.owner_id,
+        user_id=owner_id,
         role="owner",
     )
 

@@ -199,7 +199,6 @@ export function TripsPage() {
       );
 
       const createdTrip = await createTripRequest({
-        owner_id: user.id,
         destination: newTripForm.destination.trim(),
         image_url: newTripForm.imageUrl.trim() || null,
         departure_date: newTripForm.departureDate,
