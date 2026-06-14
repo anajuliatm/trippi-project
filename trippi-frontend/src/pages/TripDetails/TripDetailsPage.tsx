@@ -354,6 +354,7 @@ function FinanceSummary({
 
                   <div className="trip-finance-entry__content">
                     <strong>{entry.description}</strong>
+                    <span className="trip-finance-entry__username">{entry.username}</span>
                   </div>
 
                   <strong

@@ -59,13 +59,14 @@ def get_trip_members(
 async def delete_member(
     trip_id: str = Path(..., description="ID da viagem"),
     user_id: str = Path(..., description="ID do usuário"),
-    _: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     result = trip_member_service.delete_member(
         db=db,
         trip_id=trip_id,
         user_id=user_id,
+        is_self_removal=str(current_user.id) == user_id,
     )
     await sio.emit("trip_updated", {}, room=trip_id)
     return result

@@ -64,7 +64,7 @@ def list_trip_members(db: Session, trip_id: str) -> list[TripMember]:
     return list(db.execute(statement).scalars().all())
 
 
-def delete_member(db: Session, trip_id: str, user_id: str) -> dict[str, str]:
+def delete_member(db: Session, trip_id: str, user_id: str, is_self_removal: bool = False) -> dict[str, str]:
     try:
         member = db.execute(
             select(TripMember).where(
@@ -93,13 +93,15 @@ def delete_member(db: Session, trip_id: str, user_id: str) -> dict[str, str]:
                 Finance.trip_id == trip_id,
                 Finance.user_id == user_id,
                 Finance.type == EXPENSE_TYPE,
-            )
-        ).scalar_one_or_none()
+            ).limit(1)
+        ).scalar()
         if has_expense is not None:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Não é possível remover um membro com despesas registradas",
+            detail = (
+                "Você não pode sair da viagem enquanto tiver despesas registradas."
+                if is_self_removal
+                else "Não é possível remover um membro com despesas registradas."
             )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail)
 
         db.delete(member)
         db.commit()
