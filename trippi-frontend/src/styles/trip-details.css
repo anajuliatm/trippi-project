@@ -324,6 +324,11 @@
   grid-template-columns: 1fr;
 }
 
+.trip-activity--no-time {
+  grid-template-columns: 122px 1fr auto;
+  align-items: start;
+}
+
 .trip-activity__time {
   display: inline-flex;
   align-items: center;

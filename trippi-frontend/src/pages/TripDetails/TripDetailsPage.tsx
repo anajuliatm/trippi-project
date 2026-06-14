@@ -124,7 +124,7 @@ interface EditingActivityRef {
 
 interface TripActivity {
   id: string;
-  time: string;
+  time: string | null;
   title: string;
   description: string;
   location: string;
@@ -435,31 +435,37 @@ function ItineraryTabs({
         >
           {activeDay && activeDay.activities.length > 0 ? (
             activeDay.activities.map((activity) => (
-              <article key={activity.id} className="trip-activity">
-                <div className="trip-activity__time">
-                  <Clock3 size={16} />
-                  <span>{activity.time}</span>
-                </div>
+              <article key={activity.id} className={`trip-activity${!activity.time ? " trip-activity--no-time" : ""}`}>
+                {activity.time ? (
+                  <div className="trip-activity__time">
+                    <Clock3 size={16} />
+                    <span>{activity.time}</span>
+                  </div>
+                ) : <span />}
 
                 <div className="trip-activity__content">
-                  <div className="trip-activity__title-row">
-                    <h3>{activity.title}</h3>
-                    <div className="trip-activity__title-actions">
-                      <span className="trip-activity__inline-amount">{formatCurrency(activity.amount)}</span>
-                      <ActionButtons
-                        modes={["edit", "delete"]}
-                        onAction={(mode) => {
-                          if (mode === "edit") {
-                            onEdit(activeDate, activity);
-                          }
+                  {activity.time ? (
+                    <div className="trip-activity__title-row">
+                      <h3>{activity.title}</h3>
+                      <div className="trip-activity__title-actions">
+                        <span className="trip-activity__inline-amount">{formatCurrency(activity.amount)}</span>
+                        <ActionButtons
+                          modes={["edit", "delete"]}
+                          onAction={(mode) => {
+                            if (mode === "edit") {
+                              onEdit(activeDate, activity);
+                            }
 
-                          if (mode === "delete") {
-                            onDelete(activity.id, activeDate);
-                          }
-                        }}
-                      />
+                            if (mode === "delete") {
+                              onDelete(activity.id, activeDate);
+                            }
+                          }}
+                        />
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <h3>{activity.title}</h3>
+                  )}
                   <p>{activity.description}</p>
                   <span>{activity.notes}</span>
 
@@ -471,6 +477,24 @@ function ItineraryTabs({
                     </div>
                   ) : null}
                 </div>
+
+                {!activity.time ? (
+                  <div className="trip-activity__title-actions">
+                    <span className="trip-activity__inline-amount">{formatCurrency(activity.amount)}</span>
+                    <ActionButtons
+                      modes={["edit", "delete"]}
+                      onAction={(mode) => {
+                        if (mode === "edit") {
+                          onEdit(activeDate, activity);
+                        }
+
+                        if (mode === "delete") {
+                          onDelete(activity.id, activeDate);
+                        }
+                      }}
+                    />
+                  </div>
+                ) : null}
               </article>
             ))
           ) : (
@@ -528,6 +552,7 @@ export function TripDetailsPage() {
 
   const [itineraryModalError, setItineraryModalError] = useState<string | null>(null);
   const [itineraryMode, setItineraryMode] = useState<ItineraryEditorMode>("add");
+  const [noTime, setNoTime] = useState(false);
   const [itineraryForm, setItineraryForm] = useState<ItineraryFormState>({
     date: "",
     time: "09:00",
@@ -854,6 +879,7 @@ export function TripDetailsPage() {
 
     setItineraryMode("add");
     setEditingActivityRef(null);
+    setNoTime(false);
     setItineraryForm({
       date: initialDate,
       time: "09:00",
@@ -869,9 +895,10 @@ export function TripDetailsPage() {
   function openEditItineraryModal(date: string, activity: TripActivity) {
     setItineraryMode("edit");
     setEditingActivityRef({ activityId: activity.id, date });
+    setNoTime(!activity.time);
     setItineraryForm({
       date,
-      time: activity.time,
+      time: activity.time ?? "09:00",
       title: activity.title,
       description: activity.description,
       location: activity.location,
@@ -900,7 +927,7 @@ export function TripDetailsPage() {
       description: isEditing ? itineraryForm.description : (itineraryForm.description || null),
       location: isEditing ? itineraryForm.location : (itineraryForm.location || null),
       activity_date: itineraryForm.date,
-      activity_time: itineraryForm.time || null,
+      activity_time: noTime ? null : itineraryForm.time || null,
       notes: isEditing ? itineraryForm.notes : (itineraryForm.notes || null),
       estimated_cost: itineraryCents / 100,
     };
@@ -1496,7 +1523,7 @@ export function TripDetailsPage() {
               <div className="modal-callout modal-callout--error">{itineraryModalError}</div>
             ) : null}
 
-            <div className="modal-inline-fields">
+            <div className="itinerary-date-time-grid">
               <div className="modal-form__row">
                 <label htmlFor="itinerary-date">Data</label>
                 <select
@@ -1519,26 +1546,39 @@ export function TripDetailsPage() {
                 <input
                   id="itinerary-time"
                   type="time"
-                  value={itineraryForm.time}
+                  value={noTime ? "" : itineraryForm.time}
+                  disabled={noTime}
                   onChange={(event) =>
                     setItineraryForm((previous) => ({ ...previous, time: event.target.value }))
                   }
                 />
               </div>
 
-              <div className="modal-form__row">
-                <label htmlFor="itinerary-amount">Valor</label>
-                <div className="currency-input">
-                  <span className="currency-input__prefix">R$</span>
-                  <input
-                    id="itinerary-amount"
-                    type="text"
-                    inputMode="numeric"
-                    value={formatCentsDisplay(itineraryCents)}
-                    onChange={() => {}}
-                    onKeyDown={handleItineraryAmountKeyDown}
-                  />
-                </div>
+              <span />
+
+              <label className="itinerary-no-time-label">
+                <input
+                  type="checkbox"
+                  className="itinerary-no-time-checkbox"
+                  checked={noTime}
+                  onChange={(event) => setNoTime(event.target.checked)}
+                />
+                Sem horário definido
+              </label>
+            </div>
+
+            <div className="modal-form__row">
+              <label htmlFor="itinerary-amount">Valor</label>
+              <div className="currency-input">
+                <span className="currency-input__prefix">R$</span>
+                <input
+                  id="itinerary-amount"
+                  type="text"
+                  inputMode="numeric"
+                  value={formatCentsDisplay(itineraryCents)}
+                  onChange={() => {}}
+                  onKeyDown={handleItineraryAmountKeyDown}
+                />
               </div>
             </div>
 
@@ -1629,7 +1669,7 @@ export function TripDetailsPage() {
 
 function normalizeActivityTime(value: string | null) {
   if (!value) {
-    return "00:00";
+    return null;
   }
 
   return value.slice(0, 5);
@@ -1659,7 +1699,7 @@ function groupItineraryByDate(entries: ItineraryEntry[]): TripItineraryDay[] {
     .sort(([leftDate], [rightDate]) => leftDate.localeCompare(rightDate))
     .map(([date, activities]) => ({
       date,
-      activities: activities.sort((left, right) => left.time.localeCompare(right.time)),
+      activities: activities.sort((left, right) => (left.time ?? "").localeCompare(right.time ?? "")),
     }));
 }
 

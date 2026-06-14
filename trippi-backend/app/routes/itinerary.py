@@ -149,7 +149,7 @@ async def update_activity(
     if activity_data.activity_date is not None:
         activity.activity_date = activity_data.activity_date
 
-    if activity_data.activity_time is not None:
+    if "activity_time" in activity_data.model_fields_set:
         activity.activity_time = activity_data.activity_time
 
     if activity_data.notes is not None:

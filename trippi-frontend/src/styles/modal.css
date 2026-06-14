@@ -156,6 +156,28 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(120px, 1fr));
   gap: 10px;
+  align-items: start;
+}
+
+.itinerary-date-time-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  column-gap: 10px;
+  row-gap: 4px;
+  align-items: start;
+}
+
+.itinerary-no-time-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  opacity: 0.85;
+}
+
+.itinerary-no-time-checkbox {
+  width: auto;
 }
 
 .modal-callout {
