@@ -183,8 +183,14 @@ def update_user(
 )
 def delete_user(
     user_id: str = Path(..., description="ID do usuário"),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    if str(current_user.id) != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Você não pode excluir este usuário",
+        )
 
     user = (
         db.query(User)
