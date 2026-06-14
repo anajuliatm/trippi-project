@@ -377,13 +377,11 @@ function FinanceSummary({
 
 function ItineraryTabs({
   trip,
-  onAdd,
   onAddForDate,
   onEdit,
   onDelete,
 }: {
   trip: TripDetailsData;
-  onAdd: () => void;
   onAddForDate: (date: string) => void;
   onEdit: (date: string, activity: TripActivity) => void;
   onDelete: (activityId: string, date: string) => void;
@@ -410,7 +408,7 @@ function ItineraryTabs({
     <section className="trip-itinerary">
       <div className="trip-section__header">
         <h2 className="trip-section-title">Roteiro</h2>
-        <ActionButtons modes={["add"]} onAction={() => onAdd()} />
+        <ActionButtons modes={["add"]} onAction={() => onAddForDate(activeDate)} />
       </div>
 
       <div className="trip-itinerary__tabs">
@@ -699,8 +697,6 @@ export function TripDetailsPage() {
     if (!tripId) {
       return;
     }
-
-    setLoading(true);
 
     try {
       const [trip, summary, members, finances, itinerary] = await Promise.all([
@@ -1149,7 +1145,6 @@ export function TripDetailsPage() {
             {activeTab === "itinerary" && (
               <ItineraryTabs
                 trip={tripData}
-                onAdd={() => openAddItineraryModal()}
                 onAddForDate={(date) => openAddItineraryModal(date)}
                 onEdit={openEditItineraryModal}
                 onDelete={openItineraryDeleteModal}
