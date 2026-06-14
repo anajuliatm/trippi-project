@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator, model_validator
 from typing import Optional
 from uuid import UUID
 from datetime import date, datetime
@@ -11,6 +11,19 @@ class TripCreate(BaseModel):
     return_date: date
     budget: Decimal = 0
 
+    @field_validator('budget')
+    @classmethod
+    def budget_nao_negativo(cls, v):
+        if v < 0:
+            raise ValueError('O orçamento não pode ser negativo.')
+        return v
+
+    @model_validator(mode='after')
+    def datas_validas(self):
+        if self.return_date < self.departure_date:
+            raise ValueError('A data de volta não pode ser anterior à data de ida.')
+        return self
+
 class TripUpdate(BaseModel):
     destination: Optional[str] = None
     image_url: Optional[str] = None
@@ -18,6 +31,20 @@ class TripUpdate(BaseModel):
     return_date: Optional[date] = None
     is_active: Optional[bool] = None
     budget: Optional[float] = None
+
+    @field_validator('budget')
+    @classmethod
+    def budget_nao_negativo(cls, v):
+        if v is not None and v < 0:
+            raise ValueError('O orçamento não pode ser negativo.')
+        return v
+
+    @model_validator(mode='after')
+    def datas_validas(self):
+        if self.departure_date is not None and self.return_date is not None:
+            if self.return_date < self.departure_date:
+                raise ValueError('A data de volta não pode ser anterior à data de ida.')
+        return self
 
 class TripResponse(BaseModel):
     id: UUID

@@ -111,7 +111,7 @@ def update_user(
     if str(current_user.id) != user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Você não pode editar este usuário",
+            detail="Você não pode editar este usuário.",
         )
 
     user = (
@@ -189,7 +189,7 @@ def delete_user(
     if str(current_user.id) != user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Você não pode excluir este usuário",
+            detail="Você não pode excluir este usuário.",
         )
 
     user = (
