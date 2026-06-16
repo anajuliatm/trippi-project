@@ -72,11 +72,14 @@
 
 .finance-summary-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 360px));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 16px;
+  width: 100%;
+  align-items: stretch;
 }
 
 .finance-trip-card {
+  width: 100%;
   border-radius: 22px;
   border: 1px solid rgba(148, 163, 184, 0.24);
   background: linear-gradient(160deg, rgba(15, 30, 48, 0.92), rgba(8, 20, 36, 0.98));
