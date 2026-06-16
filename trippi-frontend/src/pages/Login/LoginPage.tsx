@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { Navigate, Link, useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, LockKeyhole, Mail, User } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import "../../styles/login-page.css";
