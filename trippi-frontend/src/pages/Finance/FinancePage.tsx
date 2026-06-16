@@ -23,7 +23,6 @@ type TripSummaryView = {
   spent: number;
   myPaid: number;
   myShouldPay: number;
-  balance: number;
 };
 
 type SettlementView = {
@@ -61,18 +60,6 @@ function formatCurrency(value: number) {
 
 function roundCurrency(value: number) {
   return Math.round(value * 100) / 100;
-}
-
-function getSignedLabel(value: number) {
-  if (value > 0) {
-    return "A receber";
-  }
-
-  if (value < 0) {
-    return "A pagar";
-  }
-
-  return "Equilibrado";
 }
 
 export function FinancePage() {
@@ -239,9 +226,6 @@ export function FinancePage() {
               >
                 <div className="finance-trip-card__head">
                   <h2>{trip.destination}</h2>
-                  <span className={`finance-balance-tag ${trip.balance >= 0 ? "is-positive" : "is-negative"}`}>
-                    {getSignedLabel(trip.balance)}
-                  </span>
                 </div>
 
                 <div className="finance-trip-card__grid">
@@ -289,7 +273,6 @@ function mapTripSummary(
     spent: trip.spent,
     myPaid: Number(myBalance?.paid ?? 0),
     myShouldPay: Number(myBalance?.should_pay ?? 0),
-    balance: Number(myBalance?.balance ?? 0),
   };
 }
 
