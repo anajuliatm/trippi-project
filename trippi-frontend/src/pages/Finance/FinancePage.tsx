@@ -1,19 +1,15 @@
 import { motion } from "framer-motion";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { MainLayout } from "../../layouts/MainLayout";
 import {
   getDashboardTripsRequest,
   getTripBalancesRequest,
-  getTripSettlementsRequest,
   type DashboardTrip,
   type TripParticipantBalance,
-  type TripSettlement,
 } from "../../services/tripService";
 import "../../styles/finance-page.css";
-
-type FinanceTab = "summary" | "settlements";
 
 type TripSummaryView = {
   tripId: string;
@@ -25,32 +21,6 @@ type TripSummaryView = {
   myShouldPay: number;
 };
 
-type SettlementView = {
-  id: string;
-  tripId: string;
-  destination: string;
-  fromUserId: string;
-  toUserId: string;
-  fromName: string;
-  toName: string;
-  amount: number;
-};
-
-type TripSettlementGroupView = {
-  id: string;
-  tripId: string;
-  destination: string;
-  direction: "incoming" | "outgoing";
-  totalAmount: number;
-  counterparties: number;
-  amountPerPerson: number;
-};
-
-const TAB_LABELS: Record<FinanceTab, string> = {
-  summary: "Resumo por Viagem",
-  settlements: "Acertos",
-};
-
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -58,36 +28,26 @@ function formatCurrency(value: number) {
   }).format(value);
 }
 
-function roundCurrency(value: number) {
-  return Math.round(value * 100) / 100;
-}
-
 export function FinancePage() {
   const { user } = useAuth();
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState<FinanceTab>("summary");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tripSummaries, setTripSummaries] = useState<TripSummaryView[]>([]);
-  const [settlements, setSettlements] = useState<SettlementView[]>([]);
 
-  async function silentRefresh() {
+  async function refreshFinance() {
     if (!user) return;
-    try {
-      const dashboardTrips = await getDashboardTripsRequest();
-      const activeTrips = dashboardTrips.filter((trip) => trip.status === "active");
-      const tripData = await Promise.all(
-        activeTrips.map(async (trip) => {
-          const [balances, tripSettlements] = await Promise.all([
-            getTripBalancesRequest(trip.id),
-            getTripSettlementsRequest(trip.id),
-          ]);
-          return { trip, balances, settlements: tripSettlements };
-        }),
-      );
-      setTripSummaries(tripData.map(({ trip, balances }) => mapTripSummary(trip, balances, user.id)));
-      setSettlements(tripData.flatMap(({ trip, settlements }) => mapTripSettlements(settlements, trip, user.id)));
-    } catch {}
+
+    const dashboardTrips = await getDashboardTripsRequest();
+    const activeTrips = dashboardTrips.filter((trip) => trip.status === "active");
+    const tripData = await Promise.all(
+      activeTrips.map(async (trip) => {
+        const balances = await getTripBalancesRequest(trip.id);
+        return { trip, balances };
+      }),
+    );
+
+    setTripSummaries(tripData.map(({ trip, balances }) => mapTripSummary(trip, balances, user.id)));
   }
 
   useEffect(() => {
@@ -99,31 +59,7 @@ export function FinancePage() {
       try {
         setLoading(true);
         setError(null);
-
-        const dashboardTrips = await getDashboardTripsRequest();
-        const activeTrips = dashboardTrips.filter((trip) => trip.status === "active");
-
-        const tripData = await Promise.all(
-          activeTrips.map(async (trip) => {
-            const [balances, settlements] = await Promise.all([
-              getTripBalancesRequest(trip.id),
-              getTripSettlementsRequest(trip.id),
-            ]);
-
-            return { trip, balances, settlements };
-          }),
-        );
-
-        const nextSummaries = tripData.map(({ trip, balances }) =>
-          mapTripSummary(trip, balances, user!.id),
-        );
-
-        const nextSettlements = tripData.flatMap(({ trip, settlements }) =>
-          mapTripSettlements(settlements, trip, user!.id),
-        );
-
-        setTripSummaries(nextSummaries);
-        setSettlements(nextSettlements);
+        await refreshFinance();
       } catch (loadError) {
         setError(
           loadError instanceof Error
@@ -137,24 +73,28 @@ export function FinancePage() {
 
     void loadFinance();
 
-    const interval = setInterval(() => { void silentRefresh() }, 30000);
+    const interval = setInterval(() => {
+      void refreshFinance().catch(() => {});
+    }, 30000);
+
     return () => clearInterval(interval);
   }, [user]);
 
   useEffect(() => {
     async function reload() {
       setLoading(true);
-      await silentRefresh();
-      setLoading(false);
+      try {
+        await refreshFinance();
+      } catch {
+        // Keep the current view if a background reload fails.
+      } finally {
+        setLoading(false);
+      }
     }
-    void reload();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.key]);
 
-  const groupedSettlements = useMemo(
-    () => groupSettlementsByTrip(settlements, user?.id ?? ""),
-    [settlements, user?.id],
-  );
+    void reload();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.key]);
 
   if (loading) {
     return (
@@ -194,27 +134,11 @@ export function FinancePage() {
           <h1>Financeiro</h1>
         </header>
 
-        <div className="finance-tabs" role="tablist" aria-label="Abas da pagina financeiro">
-          {(Object.keys(TAB_LABELS) as FinanceTab[]).map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              role="tab"
-              aria-selected={activeTab === tab}
-              className={`finance-tabs__button ${activeTab === tab ? "is-active" : ""}`}
-              onClick={() => setActiveTab(tab)}
-            >
-              {TAB_LABELS[tab]}
-            </button>
-          ))}
-        </div>
-
-        {activeTab === "summary" ? (
-          tripSummaries.length === 0 ? (
-            <div className="settlement-empty">
-              <h3>Nenhuma viagem ativa encontrada.</h3>
-            </div>
-          ) : (
+        {tripSummaries.length === 0 ? (
+          <div className="settlement-empty">
+            <h3>Nenhuma viagem ativa encontrada.</h3>
+          </div>
+        ) : (
           <section className="finance-summary-list">
             {tripSummaries.map((trip, index) => (
               <motion.article
@@ -249,9 +173,6 @@ export function FinancePage() {
               </motion.article>
             ))}
           </section>
-          )
-        ) : (
-          <SettlementsTab settlements={groupedSettlements} />
         )}
       </div>
     </MainLayout>
@@ -274,94 +195,4 @@ function mapTripSummary(
     myPaid: Number(myBalance?.paid ?? 0),
     myShouldPay: Number(myBalance?.should_pay ?? 0),
   };
-}
-
-function mapTripSettlements(
-  settlements: TripSettlement[],
-  trip: DashboardTrip,
-  currentUserId: string,
-): SettlementView[] {
-  return settlements
-    .filter(
-      (settlement) =>
-        settlement.from_user_id === currentUserId || settlement.to_user_id === currentUserId,
-    )
-    .map((settlement, index) => ({
-      id: `${trip.id}:${settlement.from_user_id}:${settlement.to_user_id}:${index}`,
-      tripId: trip.id,
-      destination: trip.destination,
-      fromUserId: settlement.from_user_id,
-      toUserId: settlement.to_user_id,
-      fromName: settlement.from_username,
-      toName: settlement.to_username,
-      amount: Number(settlement.amount),
-    }));
-}
-
-function groupSettlementsByTrip(
-  settlements: SettlementView[],
-  currentUserId: string,
-): TripSettlementGroupView[] {
-  const grouped = new Map<string, TripSettlementGroupView>();
-
-  for (const settlement of settlements) {
-    const isIncoming = settlement.toUserId === currentUserId;
-    const direction = isIncoming ? "incoming" : "outgoing";
-    const key = `${settlement.tripId}:${direction}`;
-    const currentGroup = grouped.get(key);
-
-    if (currentGroup) {
-      currentGroup.totalAmount += settlement.amount;
-      currentGroup.counterparties += 1;
-      currentGroup.amountPerPerson = roundCurrency(
-        currentGroup.totalAmount / currentGroup.counterparties,
-      );
-      continue;
-    }
-
-    grouped.set(key, {
-      id: key,
-      tripId: settlement.tripId,
-      destination: settlement.destination,
-      direction,
-      totalAmount: settlement.amount,
-      counterparties: 1,
-      amountPerPerson: roundCurrency(settlement.amount),
-    });
-  }
-
-  return Array.from(grouped.values());
-}
-
-function SettlementsTab({
-  settlements,
-}: {
-  settlements: TripSettlementGroupView[];
-}) {
-  return (
-    <section className="settlements-section">
-      <div className="settlement-list">
-        {settlements.length === 0 ? (
-          <div className="settlement-empty">
-            <h3>Sem sugestões de acerto nas viagens ativas.</h3>
-          </div>
-        ) : (
-          settlements.map((settlement) => {
-            return (
-              <article key={settlement.id} className="settlement-item">
-                <p className="settlement-item__summary">
-                  <span className="settlement-item__destination">{settlement.destination}</span>
-                  <span className="settlement-item__divider">|</span>
-                  <span>Valor por pessoa:</span>
-                  <strong className="settlement-item__value">
-                    {formatCurrency(settlement.amountPerPerson)}
-                  </strong>
-                </p>
-              </article>
-            );
-          })
-        )}
-      </div>
-    </section>
-  );
 }
