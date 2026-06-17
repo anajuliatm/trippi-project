@@ -1,29 +1,78 @@
 # Trippi Project
 
-Projeto da disciplina de Sistemas Distribuidos com foco em planejamento e acompanhamento de viagens.
+Projeto da disciplina de Sistemas Distribuidos com foco em planejamento, organizacao e acompanhamento de viagens em grupo.
 
-## Overview
+## Visao geral
 
-O repositorio esta organizado em dois modulos:
+O repositorio esta dividido em dois modulos principais:
 
-- `trippi-frontend/`: aplicacao web em React + TypeScript (Vite).
-- `trippi-backend/`: servico backend em Python.
+- `trippi-frontend/`: aplicacao web em React + TypeScript.
+- `trippi-backend/`: API em FastAPI com integracao WebSocket via Socket.IO.
 
-## Tecnologias
+Hoje o sistema cobre fluxos de autenticacao, viagens, membros, roteiro e financeiro, com frontend consumindo a API REST e eventos em tempo real.
 
-- Frontend: React 19, TypeScript, Vite, React Router, Zustand, Axios, Framer Motion, Lucide React, Socket.IO Client
-- Backend: FastAPI, Uvicorn, SQLAlchemy, Psycopg2, Python Dotenv, Pydantic, python-socketio
+## Stack
+
+### Frontend
+
+- React 19
+- TypeScript
+- Vite
+- React Router
+- Axios
+- Zustand
+- Framer Motion
+- Lucide React
+- Socket.IO Client
+
+### Backend
+
+- FastAPI
+- Uvicorn
+- SQLAlchemy
+- PostgreSQL via `psycopg2-binary`
+- Pydantic
+- Python Dotenv
+- JWT com `python-jose`
+- Password hashing com `passlib`
+- Socket.IO ASGI
+
+## Estrutura do projeto
+
+```text
+.
+|-- trippi-backend/
+|   |-- app/
+|   |   |-- core/
+|   |   |-- models/
+|   |   |-- routes/
+|   |   |-- schemas/
+|   |   `-- services/
+|   `-- requirements.txt
+`-- trippi-frontend/
+	|-- public/
+	`-- src/
+		|-- components/
+		|-- contexts/
+		|-- layouts/
+		|-- pages/
+		|-- routes/
+		|-- services/
+		|-- store/
+		|-- styles/
+		`-- types/
+```
 
 ## Pre-requisitos
 
-Instale na sua maquina:
+Instale na maquina:
 
-- Node.js (recomendado: versao LTS 20+)
-- npm (normalmente vem junto com o Node.js)
-- Python 3.11+ 
+- Node.js 20+ com npm
+- Python 3.11+
 - pip
+- Acesso a uma base PostgreSQL
 
-Para verificar:
+Comandos para verificar:
 
 ```bash
 node -v
@@ -32,15 +81,37 @@ python --version
 pip --version
 ```
 
-## Como rodar o backend
+## Variaveis de ambiente
 
-1. Entre na pasta do backend:
+### Backend
+
+Crie o arquivo `trippi-backend/.env`:
+
+```env
+DATABASE_URL=postgresql://usuario:senha@host:porta/database
+```
+
+### Frontend
+
+Crie o arquivo `trippi-frontend/.env`:
+
+```env
+VITE_API_URL=http://localhost:8000
+```
+
+Se `VITE_API_URL` nao for definido, o frontend usa `http://localhost:8000` por padrao.
+
+## Como executar
+
+### 1. Backend
+
+Entre na pasta do backend:
 
 ```bash
 cd trippi-backend
 ```
 
-2. Crie e ative um ambiente virtual:
+Crie e ative um ambiente virtual.
 
 Windows:
 
@@ -56,52 +127,45 @@ python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-3. Instale as dependencias:
+Instale as dependencias:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-4. Crie um arquivo `.env` dentro de `trippi-backend/` com a conexao do banco:
-
-```env
-DATABASE_URL=postgresql://usuario:senha@host:porta/database
-```
-
-5. Rode a API:
+Inicie a API:
 
 ```bash
 uvicorn app.main:socket_app --reload
 ```
 
-6. Acesse a aplicacao e a documentacao:
+Endpoints locais importantes:
 
-```text
-API: http://127.0.0.1:8000
-Swagger: http://127.0.0.1:8000/docs
-```
+- API: `http://127.0.0.1:8000`
+- Swagger: `http://127.0.0.1:8000/docs`
+- ReDoc: `http://127.0.0.1:8000/redoc`
 
-## Como rodar o frontend
+### 2. Frontend
 
-1. Entre na pasta do frontend:
+Em outro terminal, entre na pasta do frontend:
 
 ```bash
 cd trippi-frontend
 ```
 
-2. Instale as dependencias:
+Instale as dependencias:
 
 ```bash
 npm install
 ```
 
-3. Rode o servidor de desenvolvimento:
+Inicie o servidor de desenvolvimento:
 
 ```bash
 npm run dev
 ```
 
-4. Abra a URL exibida no terminal (normalmente):
+Abra a URL exibida pelo Vite, normalmente:
 
 ```text
 http://localhost:5173
@@ -109,17 +173,32 @@ http://localhost:5173
 
 ## Scripts uteis
 
-### Backend
-
-Dentro de `trippi-backend/`:
-
-- `uvicorn app.main:socket_app --reload`: inicia a API em modo de desenvolvimento.
-
 ### Frontend
 
 Dentro de `trippi-frontend/`:
 
-- `npm run dev`: inicia ambiente de desenvolvimento.
-- `npm run build`: gera build de producao.
-- `npm run preview`: sobe preview local da build.
-- `npm run lint`: executa lint do projeto.
+- `npm run dev`: inicia o ambiente de desenvolvimento.
+- `npm run build`: gera a build de producao.
+- `npm run preview`: sobe uma preview local da build.
+- `npm run lint`: executa o lint do projeto.
+
+### Backend
+
+Dentro de `trippi-backend/`:
+
+- `uvicorn app.main:socket_app --reload`: inicia a API com suporte a Socket.IO.
+
+## Comunicacao entre frontend e backend
+
+- O frontend consome a API REST via Axios.
+- O token JWT e enviado automaticamente nas requisicoes autenticadas.
+- A conexao de socket usa a mesma base definida em `VITE_API_URL`.
+- O backend libera CORS para `localhost:5173`, `127.0.0.1:5173` e o deploy do frontend.
+
+## Modulos principais
+
+- `auth`: login e autenticacao com JWT.
+- `trip`: CRUD de viagens e resumos financeiros.
+- `trip_member`: gerenciamento de membros da viagem.
+- `itinerary`: roteiro da viagem.
+- `finance`: lancamentos financeiros e calculos de saldo.
