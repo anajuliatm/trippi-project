@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, Path
 from sqlalchemy.orm import Session
 
-from app.dependencies import get_db
+from app.dependencies import get_current_user, get_db
 from app.models.payment import Payment
+from app.models.user import User
 from app.schemas.payment import (
     PaymentCreate,
     PaymentUpdate,
@@ -22,6 +23,7 @@ router = APIRouter(
 )
 def create_payment(
     payment: PaymentCreate,
+    _: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
 
@@ -44,6 +46,7 @@ def create_payment(
 )
 def get_trip_payments(
     trip_id: str = Path(..., description="ID da viagem"),
+    _: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
 
@@ -64,6 +67,7 @@ def get_trip_payments(
 def update_payment(
     payment_data: PaymentUpdate,
     payment_id: str = Path(..., description="ID do pagamento"),
+    _: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
 
@@ -104,6 +108,7 @@ def update_payment(
 )
 def delete_payment(
     payment_id: str = Path(..., description="ID do pagamento"),
+    _: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
 

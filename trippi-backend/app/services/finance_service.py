@@ -57,12 +57,14 @@ def create_finance_entry(
 
     finance = Finance(**entry.model_dump())
 
+    _get_trip_or_404(db=db, trip_id=entry.trip_id)
+
     try:
-        with db.begin():
-            _get_trip_or_404(db=db, trip_id=entry.trip_id)
-            db.add(finance)
-            db.flush()
+        db.add(finance)
+        db.flush()
+        db.commit()
     except IntegrityError as exc:
+        db.rollback()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Não foi possível criar o lançamento financeiro",
@@ -105,36 +107,31 @@ def update_finance_entry(
     finance_id: str,
     finance_data: FinanceUpdate,
 ) -> Finance:
-    finance: Finance | None = None
+    finance = _get_finance_or_404(
+        db=db,
+        finance_id=finance_id,
+        trip_id=trip_id,
+        user_id=user_id,
+    )
 
     try:
-        with db.begin():
-            finance = _get_finance_or_404(
-                db=db,
-                finance_id=finance_id,
-                trip_id=trip_id,
-                user_id=user_id,
-            )
+        if finance_data.type is not None:
+            finance.type = finance_data.type
 
-            if finance_data.type is not None:
-                finance.type = finance_data.type
+        if finance_data.description is not None:
+            finance.description = finance_data.description
 
-            if finance_data.description is not None:
-                finance.description = finance_data.description
+        if finance_data.amount is not None:
+            finance.amount = Decimal(str(finance_data.amount)).quantize(CENT)
 
-            if finance_data.amount is not None:
-                finance.amount = Decimal(str(finance_data.amount)).quantize(CENT)
+        db.flush()
+        db.commit()
     except IntegrityError as exc:
+        db.rollback()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Não foi possível atualizar o lançamento financeiro",
         ) from exc
-
-    if finance is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Lançamento não encontrado para esta viagem e usuário",
-        )
 
     db.refresh(finance)
     return finance
@@ -146,14 +143,14 @@ def delete_finance_entry(
     user_id: str,
     finance_id: str,
 ) -> dict[str, str]:
-    with db.begin():
-        finance = _get_finance_or_404(
-            db=db,
-            finance_id=finance_id,
-            trip_id=trip_id,
-            user_id=user_id,
-        )
-        db.delete(finance)
+    finance = _get_finance_or_404(
+        db=db,
+        finance_id=finance_id,
+        trip_id=trip_id,
+        user_id=user_id,
+    )
+    db.delete(finance)
+    db.commit()
 
     return {"message": "Lançamento deletado"}
 
