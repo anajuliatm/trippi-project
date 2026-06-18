@@ -21,6 +21,7 @@ import {
   type ItineraryEntry,
 } from "../../services/itineraryService";
 import {
+  createFinanceRequest,
   getTripFinancesRequest,
   type FinanceEntry,
 } from "../../services/financeService";
@@ -305,9 +306,11 @@ function OverviewTab({
 function FinanceSummary({
   trip,
   onEditBudget,
+  onAddExpense,
 }: {
   trip: TripDetailsData;
   onEditBudget: () => void;
+  onAddExpense: () => void;
 }) {
   const remaining = trip.budget - trip.spent;
   const financeEntries = trip.financeEntries;
@@ -339,6 +342,7 @@ function FinanceSummary({
       <section className="trip-finance__entries" aria-label="Lançamentos da viagem">
         <div className="trip-section__header">
           <h3 className="trip-finance__entries-title">Lançamentos da viagem</h3>
+          <ActionButtons modes={["add"]} onAction={onAddExpense} />
         </div>
 
         {financeEntries.length > 0 ? (
@@ -532,6 +536,10 @@ export function TripDetailsPage() {
   const [isItineraryModalOpen, setIsItineraryModalOpen] = useState(false);
   const [isItineraryDeleteOpen, setIsItineraryDeleteOpen] = useState(false);
   const [isParticipantsOpen, setIsParticipantsOpen] = useState(false);
+  const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
+  const [expenseCents, setExpenseCents] = useState(0);
+  const [expenseDescription, setExpenseDescription] = useState("");
+  const [expenseModalError, setExpenseModalError] = useState<string | null>(null);
 
   const [overviewForm, setOverviewForm] = useState<OverviewFormState>({
     destination: "",
@@ -1097,6 +1105,57 @@ export function TripDetailsPage() {
     }
   }
 
+  function openAddExpenseModal() {
+    setExpenseCents(0);
+    setExpenseDescription("");
+    setExpenseModalError(null);
+    setIsAddExpenseOpen(true);
+  }
+
+  function handleExpenseCentsKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key >= "0" && e.key <= "9") {
+      e.preventDefault();
+      const next = expenseCents * 10 + Number(e.key);
+      if (next <= 99999999) setExpenseCents(next);
+    } else if (e.key === "Backspace") {
+      e.preventDefault();
+      setExpenseCents(Math.floor(expenseCents / 10));
+    }
+  }
+
+  async function handleSaveExpense() {
+    if (!tripData || !user) return;
+
+    if (!expenseDescription.trim()) {
+      setExpenseModalError("Informe a descrição do gasto.");
+      return;
+    }
+
+    if (expenseCents === 0) {
+      setExpenseModalError("Informe o valor do gasto.");
+      return;
+    }
+
+    try {
+      setExpenseModalError(null);
+      await createFinanceRequest(tripData.id, user.id, {
+        trip_id: tripData.id,
+        user_id: user.id,
+        type: "expense",
+        description: expenseDescription.trim(),
+        amount: expenseCents / 100,
+      });
+      setIsAddExpenseOpen(false);
+      await reloadTripDetails();
+    } catch (saveError) {
+      setExpenseModalError(
+        saveError instanceof Error
+          ? saveError.message
+          : "Não foi possível registrar o gasto.",
+      );
+    }
+  }
+
   if (loading) {
     return (
       <MainLayout>
@@ -1169,7 +1228,7 @@ export function TripDetailsPage() {
                 canLeaveTrip={canLeaveTrip}
               />
             )}
-            {activeTab === "finance" && <FinanceSummary trip={tripData} onEditBudget={openBudgetModal} />}
+            {activeTab === "finance" && <FinanceSummary trip={tripData} onEditBudget={openBudgetModal} onAddExpense={openAddExpenseModal} />}
             {activeTab === "itinerary" && (
               <ItineraryTabs
                 trip={tripData}
@@ -1498,6 +1557,55 @@ export function TripDetailsPage() {
               <strong>{formatCurrency(budgetPreview)}</strong>
             </div>
           </div>
+        </Modal>
+
+        <Modal
+          open={isAddExpenseOpen}
+          title="Registrar Gasto"
+          onClose={() => { setIsAddExpenseOpen(false); setExpenseModalError(null); }}
+          footer={
+            <>
+              <button type="button" className="modal-btn" onClick={() => { setIsAddExpenseOpen(false); setExpenseModalError(null); }}>
+                Cancelar
+              </button>
+              <button type="button" className="modal-btn modal-btn--primary" onClick={() => void handleSaveExpense()}>
+                Registrar
+              </button>
+            </>
+          }
+        >
+          <form className="modal-form" onSubmit={(e) => e.preventDefault()}>
+            {expenseModalError ? (
+              <div className="modal-callout modal-callout--error">{expenseModalError}</div>
+            ) : null}
+
+            <div className="modal-form__row">
+              <label htmlFor="expense-description">Descrição</label>
+              <input
+                id="expense-description"
+                type="text"
+                placeholder="Ex: Jantar no restaurante"
+                value={expenseDescription}
+                onChange={(e) => setExpenseDescription(e.target.value)}
+                maxLength={200}
+              />
+            </div>
+
+            <div className="modal-form__row">
+              <label htmlFor="expense-amount">Valor</label>
+              <div className="currency-input">
+                <span className="currency-input__prefix">R$</span>
+                <input
+                  id="expense-amount"
+                  type="text"
+                  inputMode="numeric"
+                  value={formatCentsDisplay(expenseCents)}
+                  onChange={() => {}}
+                  onKeyDown={handleExpenseCentsKeyDown}
+                />
+              </div>
+            </div>
+          </form>
         </Modal>
 
         <Modal
