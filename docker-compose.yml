@@ -1,0 +1,22 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: ./trippi-backend
+    container_name: trippi-backend
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://postgres.wljynnjpewptqzvfbhfw:Trippi%4026%21%23SD@aws-1-sa-east-1.pooler.supabase.com:6543/postgres
+
+  frontend:
+    build:
+      context: ./trippi-frontend
+    container_name: trippi-frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
