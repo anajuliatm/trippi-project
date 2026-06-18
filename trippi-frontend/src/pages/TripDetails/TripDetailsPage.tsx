@@ -22,6 +22,8 @@ import {
 } from "../../services/itineraryService";
 import {
   createFinanceRequest,
+  updateFinanceRequest,
+  deleteFinanceRequest,
   getTripFinancesRequest,
   type FinanceEntry,
 } from "../../services/financeService";
@@ -151,6 +153,7 @@ interface TripFinanceViewEntry {
   type: string;
   description: string;
   amount: number;
+  isManual: boolean;
 }
 
 interface TripDetailsData {
@@ -307,13 +310,23 @@ function FinanceSummary({
   trip,
   onEditBudget,
   onAddExpense,
+  onEditExpense,
+  onDeleteExpense,
 }: {
   trip: TripDetailsData;
   onEditBudget: () => void;
   onAddExpense: () => void;
+  onEditExpense: (entry: TripFinanceViewEntry) => void;
+  onDeleteExpense: (entry: TripFinanceViewEntry) => void;
 }) {
   const remaining = trip.budget - trip.spent;
-  const financeEntries = trip.financeEntries;
+  const [filter, setFilter] = useState<"all" | "manual" | "activity">("all");
+
+  const financeEntries = trip.financeEntries.filter((entry) => {
+    if (filter === "manual") return entry.isManual;
+    if (filter === "activity") return !entry.isManual;
+    return true;
+  });
 
   return (
     <section className="trip-finance">
@@ -345,6 +358,19 @@ function FinanceSummary({
           <ActionButtons modes={["add"]} onAction={onAddExpense} />
         </div>
 
+        <div className="trip-itinerary__tabs">
+          {(["all", "manual", "activity"] as const).map((option) => (
+            <button
+              key={option}
+              type="button"
+              className={`trip-itinerary__tab${filter === option ? " is-active" : ""}`}
+              onClick={() => setFilter(option)}
+            >
+              {option === "all" ? "Todos" : option === "manual" ? "Manuais" : "Atividades"}
+            </button>
+          ))}
+        </div>
+
         {financeEntries.length > 0 ? (
           <div className="trip-finance__entries-list">
             {financeEntries.map((entry) => {
@@ -361,11 +387,23 @@ function FinanceSummary({
                     <span className="trip-finance-entry__username">{entry.username}</span>
                   </div>
 
-                  <strong
-                    className={`trip-finance-entry__amount ${signedAmount >= 0 ? "is-positive" : "is-negative"}`}
-                  >
-                    {formatSignedCurrency(signedAmount)}
-                  </strong>
+                  <div className="trip-finance-entry__right">
+                    <strong
+                      className={`trip-finance-entry__amount ${signedAmount >= 0 ? "is-positive" : "is-negative"}`}
+                    >
+                      {formatSignedCurrency(signedAmount)}
+                    </strong>
+
+                    {entry.isManual && (
+                      <ActionButtons
+                        modes={["edit", "delete"]}
+                        onAction={(mode) => {
+                          if (mode === "edit") onEditExpense(entry);
+                          if (mode === "delete") onDeleteExpense(entry);
+                        }}
+                      />
+                    )}
+                  </div>
                 </article>
               );
             })}
@@ -537,6 +575,9 @@ export function TripDetailsPage() {
   const [isItineraryDeleteOpen, setIsItineraryDeleteOpen] = useState(false);
   const [isParticipantsOpen, setIsParticipantsOpen] = useState(false);
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
+  const [isEditExpenseOpen, setIsEditExpenseOpen] = useState(false);
+  const [isDeleteExpenseOpen, setIsDeleteExpenseOpen] = useState(false);
+  const [selectedExpense, setSelectedExpense] = useState<TripFinanceViewEntry | null>(null);
   const [expenseCents, setExpenseCents] = useState(0);
   const [expenseDescription, setExpenseDescription] = useState("");
   const [expenseModalError, setExpenseModalError] = useState<string | null>(null);
@@ -1123,6 +1164,66 @@ export function TripDetailsPage() {
     }
   }
 
+  function openEditExpenseModal(entry: TripFinanceViewEntry) {
+    setSelectedExpense(entry);
+    setExpenseDescription(entry.description);
+    setExpenseCents(Math.round(entry.amount * 100));
+    setExpenseModalError(null);
+    setIsEditExpenseOpen(true);
+  }
+
+  async function handleSaveEditExpense() {
+    if (!tripData || !selectedExpense) return;
+
+    if (!expenseDescription.trim()) {
+      setExpenseModalError("Informe a descrição do gasto.");
+      return;
+    }
+
+    if (expenseCents === 0) {
+      setExpenseModalError("Informe o valor do gasto.");
+      return;
+    }
+
+    try {
+      setExpenseModalError(null);
+      await updateFinanceRequest(tripData.id, selectedExpense.userId, selectedExpense.id, {
+        description: expenseDescription.trim(),
+        amount: expenseCents / 100,
+      });
+      setIsEditExpenseOpen(false);
+      setSelectedExpense(null);
+      await reloadTripDetails();
+    } catch (saveError) {
+      setExpenseModalError(
+        saveError instanceof Error
+          ? saveError.message
+          : "Não foi possível atualizar o gasto.",
+      );
+    }
+  }
+
+  function openDeleteExpenseModal(entry: TripFinanceViewEntry) {
+    setSelectedExpense(entry);
+    setIsDeleteExpenseOpen(true);
+  }
+
+  async function handleDeleteExpense() {
+    if (!tripData || !selectedExpense) return;
+    try {
+      await deleteFinanceRequest(tripData.id, selectedExpense.userId, selectedExpense.id);
+      setIsDeleteExpenseOpen(false);
+      setSelectedExpense(null);
+      await reloadTripDetails();
+    } catch (deleteError) {
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : "Não foi possível excluir o gasto.",
+      );
+    }
+  }
+
   async function handleSaveExpense() {
     if (!tripData || !user) return;
 
@@ -1228,7 +1329,15 @@ export function TripDetailsPage() {
                 canLeaveTrip={canLeaveTrip}
               />
             )}
-            {activeTab === "finance" && <FinanceSummary trip={tripData} onEditBudget={openBudgetModal} onAddExpense={openAddExpenseModal} />}
+            {activeTab === "finance" && (
+              <FinanceSummary
+                trip={tripData}
+                onEditBudget={openBudgetModal}
+                onAddExpense={openAddExpenseModal}
+                onEditExpense={openEditExpenseModal}
+                onDeleteExpense={openDeleteExpenseModal}
+              />
+            )}
             {activeTab === "itinerary" && (
               <ItineraryTabs
                 trip={tripData}
@@ -1609,6 +1718,78 @@ export function TripDetailsPage() {
         </Modal>
 
         <Modal
+          open={isEditExpenseOpen}
+          title="Editar Gasto"
+          onClose={() => { setIsEditExpenseOpen(false); setExpenseModalError(null); }}
+          footer={
+            <>
+              <button type="button" className="modal-btn" onClick={() => { setIsEditExpenseOpen(false); setExpenseModalError(null); }}>
+                Cancelar
+              </button>
+              <button type="button" className="modal-btn modal-btn--primary" onClick={() => void handleSaveEditExpense()}>
+                Salvar
+              </button>
+            </>
+          }
+        >
+          <form className="modal-form" onSubmit={(e) => e.preventDefault()}>
+            {expenseModalError ? (
+              <div className="modal-callout modal-callout--error">{expenseModalError}</div>
+            ) : null}
+
+            <div className="modal-form__row">
+              <label htmlFor="edit-expense-description">Descrição</label>
+              <input
+                id="edit-expense-description"
+                type="text"
+                value={expenseDescription}
+                onChange={(e) => setExpenseDescription(e.target.value)}
+                maxLength={200}
+              />
+            </div>
+
+            <div className="modal-form__row">
+              <label htmlFor="edit-expense-amount">Valor</label>
+              <div className="currency-input">
+                <span className="currency-input__prefix">R$</span>
+                <input
+                  id="edit-expense-amount"
+                  type="text"
+                  inputMode="numeric"
+                  value={formatCentsDisplay(expenseCents)}
+                  onChange={() => {}}
+                  onKeyDown={handleExpenseCentsKeyDown}
+                />
+              </div>
+            </div>
+          </form>
+        </Modal>
+
+        <Modal
+          open={isDeleteExpenseOpen}
+          title="Excluir Gasto"
+          onClose={() => { setSelectedExpense(null); setIsDeleteExpenseOpen(false); }}
+          size="sm"
+          footer={
+            <>
+              <button
+                type="button"
+                className="modal-btn"
+                onClick={() => { setSelectedExpense(null); setIsDeleteExpenseOpen(false); }}
+              >
+                Cancelar
+              </button>
+              <button type="button" className="modal-btn modal-btn--danger" onClick={() => void handleDeleteExpense()}>
+                Excluir
+              </button>
+            </>
+          }
+        >
+          <p>Tem certeza que deseja excluir este gasto?</p>
+          <p>Esta ação não poderá ser desfeita.</p>
+        </Modal>
+
+        <Modal
           open={isItineraryModalOpen}
           title={itineraryMode === "add" ? "Adicionar item no roteiro" : "Editar item no roteiro"}
           onClose={() => { setIsItineraryModalOpen(false); setItineraryModalError(null); }}
@@ -1834,6 +2015,7 @@ function mapFinances(
     type: finance.type,
     description: getFinanceEntryDescription(finance.description),
     amount: Number(finance.amount),
+    isManual: !finance.description?.startsWith(ITINERARY_FINANCE_PREFIX),
   }));
 }
 
