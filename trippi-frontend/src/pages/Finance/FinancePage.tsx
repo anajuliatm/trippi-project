@@ -10,6 +10,7 @@ import {
   type TripParticipantBalance,
 } from "../../services/tripService";
 import "../../styles/finance-page.css";
+import "../../styles/trips-page.css";
 
 type TripSummaryView = {
   tripId: string;
@@ -19,6 +20,7 @@ type TripSummaryView = {
   spent: number;
   myPaid: number;
   myShouldPay: number;
+  status: "active" | "completed";
 };
 
 function formatCurrency(value: number) {
@@ -34,14 +36,14 @@ export function FinancePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tripSummaries, setTripSummaries] = useState<TripSummaryView[]>([]);
+  const [filter, setFilter] = useState<"active" | "completed">("active");
 
   async function refreshFinance() {
     if (!user) return;
 
     const dashboardTrips = await getDashboardTripsRequest();
-    const activeTrips = dashboardTrips.filter((trip) => trip.status === "active");
     const tripData = await Promise.all(
-      activeTrips.map(async (trip) => {
+      dashboardTrips.map(async (trip) => {
         const balances = await getTripBalancesRequest(trip.id);
         return { trip, balances };
       }),
@@ -134,13 +136,28 @@ export function FinancePage() {
           <h1>Financeiro</h1>
         </header>
 
-        {tripSummaries.length === 0 ? (
+        <div className="trips-tabs" role="tablist" aria-label="Filtrar viagens por status">
+          {(["active", "completed"] as const).map((option) => (
+            <button
+              key={option}
+              type="button"
+              role="tab"
+              aria-selected={filter === option}
+              className={`trips-tabs__button${filter === option ? " is-active" : ""}`}
+              onClick={() => setFilter(option)}
+            >
+              {option === "active" ? "Ativas" : "Concluídas"}
+            </button>
+          ))}
+        </div>
+
+        {tripSummaries.filter((t) => t.status === filter).length === 0 ? (
           <div className="settlement-empty">
-            <h3>Nenhuma viagem ativa encontrada.</h3>
+            <h3>{filter === "active" ? "Nenhuma viagem ativa encontrada." : "Nenhuma viagem concluída encontrada."}</h3>
           </div>
         ) : (
           <section className="finance-summary-list">
-            {tripSummaries.map((trip, index) => (
+            {tripSummaries.filter((t) => t.status === filter).map((trip, index) => (
               <motion.article
                 key={trip.tripId}
                 className="finance-trip-card"
@@ -194,5 +211,6 @@ function mapTripSummary(
     spent: trip.spent,
     myPaid: Number(myBalance?.paid ?? 0),
     myShouldPay: Number(myBalance?.should_pay ?? 0),
+    status: trip.status,
   };
 }
