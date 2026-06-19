@@ -234,6 +234,12 @@
   color: rgba(226, 232, 240, 0.72);
 }
 
+.trip-finance-entry__right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .trip-finance-entry__amount {
   font-size: 18px;
 }
