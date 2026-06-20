@@ -7,7 +7,7 @@ services:
     container_name: trippi-backend
     restart: always
     ports:
-      - "9010:8000"
+      - "9011:8000"
     environment:
       DATABASE_URL: postgresql://postgres.wljynnjpewptqzvfbhfw:Trippi%4026%21%23SD@aws-1-sa-east-1.pooler.supabase.com:6543/postgres
 
@@ -17,6 +17,6 @@ services:
     container_name: trippi-frontend
     restart: always
     ports:
-      - "9011:3000"
+      - "9010:3000"
     depends_on:
       - backend

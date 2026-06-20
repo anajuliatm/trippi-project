@@ -17,8 +17,8 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",
         "http://127.0.0.1:5173",
-        "http://localhost:9011",
-        "http://127.0.0.1:9011",
+        "http://localhost:9010",
+        "http://127.0.0.1:9010",
         "https://trippi-project-front.onrender.com",
     ],
     allow_credentials=True,

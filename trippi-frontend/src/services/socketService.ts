@@ -1,6 +1,6 @@
 import { io, type Socket } from "socket.io-client";
 
-const SOCKET_URL = import.meta.env.VITE_API_URL ?? "http://localhost:9010";
+const SOCKET_URL = import.meta.env.VITE_API_URL ?? "http://localhost:9011";
 
 
 let socket: Socket | null = null;
