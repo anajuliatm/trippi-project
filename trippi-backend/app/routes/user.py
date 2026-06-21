@@ -6,45 +6,9 @@ from sqlalchemy.orm import Session
 from app.core.security import hash_password
 from app.dependencies import get_current_user, get_db
 from app.models.user import User
-from app.schemas.user import UserCreate, UserEmailLookup, UserUpdate, UserResponse
+from app.schemas.user import UserEmailLookup, UserUpdate, UserResponse
 
 router = APIRouter(prefix="/users", tags=["Users"])
-
-@router.post(
-    "/",
-    response_model=UserResponse,
-    summary="Criar usuário",
-    description="Cria um novo usuário."
-)
-def create_user(user: UserCreate, db: Session = Depends(get_db)):
-    existing_user = (
-        db.query(User)
-        .filter(
-            or_(
-                func.lower(User.email) == func.lower(user.email),
-                func.lower(User.username) == func.lower(user.username),
-            )
-        )
-        .first()
-    )
-
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Email ou username já cadastrados")
-
-
-    new_user = User(
-        username=user.username,
-        email=user.email,
-        password=hash_password(user.password)
-    )
-
-    db.add(new_user)
-
-    db.commit()
-
-    db.refresh(new_user)
-
-    return new_user
 
 @router.get(
     "/by-email",
@@ -54,6 +18,7 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
 )
 def get_user_by_email(
     email: str = Query(..., description="Email do usuário"),
+    _: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     lookup = UserEmailLookup(email=email)
@@ -80,6 +45,7 @@ def get_user_by_email(
 )
 def get_user(
     user_id: str = Path(..., description="ID do usuário"),
+    _: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     user = (

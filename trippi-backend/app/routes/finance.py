@@ -27,9 +27,10 @@ async def create_entry(
     entry: FinanceCreate,
     trip_id: str = Path(..., description="ID da viagem"),
     user_id: str = Path(..., description="ID do usuário"),
-    _: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    trip_service.ensure_trip_access(db=db, trip_id=trip_id, user_id=str(current_user.id))
     result = finance_service.create_finance_entry(
         db=db,
         trip_id=trip_id,
@@ -94,9 +95,10 @@ async def update_finance(
     trip_id: str = Path(..., description="ID da viagem"),
     user_id: str = Path(..., description="ID do usuário"),
     finance_id: str = Path(..., description="ID do lançamento financeiro"),
-    _: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    trip_service.ensure_trip_access(db=db, trip_id=trip_id, user_id=str(current_user.id))
     result = finance_service.update_finance_entry(
         db=db,
         trip_id=trip_id,
@@ -116,9 +118,10 @@ async def delete_finance(
     trip_id: str = Path(..., description="ID da viagem"),
     user_id: str = Path(..., description="ID do usuário"),
     finance_id: str = Path(..., description="ID do lançamento financeiro"),
-    _: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    trip_service.ensure_trip_access(db=db, trip_id=trip_id, user_id=str(current_user.id))
     result = finance_service.delete_finance_entry(
         db=db,
         trip_id=trip_id,

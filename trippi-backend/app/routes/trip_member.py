@@ -7,7 +7,7 @@ from app.schemas.trip_member import (
     TripMemberCreate,
     TripMemberResponse
 )
-from app.services import trip_member_service
+from app.services import trip_member_service, trip_service
 from app.socket import sio
 
 router = APIRouter(
@@ -25,9 +25,10 @@ async def add_member(
     member: TripMemberCreate,
     trip_id: str = Path(..., description="ID da viagem"),
     user_id: str = Path(..., description="ID do usuário"),
-    _: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    trip_service.ensure_trip_access(db=db, trip_id=trip_id, user_id=str(current_user.id))
     result = trip_member_service.add_member(
         db=db,
         trip_id=trip_id,
@@ -46,8 +47,10 @@ async def add_member(
 )
 def get_trip_members(
     trip_id: str = Path(..., description="ID da viagem"),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    trip_service.ensure_trip_access(db=db, trip_id=trip_id, user_id=str(current_user.id))
     return trip_member_service.list_trip_members(db=db, trip_id=trip_id)
 
 
@@ -62,6 +65,7 @@ async def delete_member(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    trip_service.ensure_trip_access(db=db, trip_id=trip_id, user_id=str(current_user.id))
     result = trip_member_service.delete_member(
         db=db,
         trip_id=trip_id,
