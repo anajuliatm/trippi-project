@@ -46,6 +46,7 @@ async def add_member(
 )
 def get_trip_members(
     trip_id: str = Path(..., description="ID da viagem"),
+    _: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     return trip_member_service.list_trip_members(db=db, trip_id=trip_id)

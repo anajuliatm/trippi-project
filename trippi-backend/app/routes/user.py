@@ -18,6 +18,7 @@ router = APIRouter(prefix="/users", tags=["Users"])
 )
 def get_user_by_email(
     email: str = Query(..., description="Email do usuário"),
+    _: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     lookup = UserEmailLookup(email=email)
@@ -44,6 +45,7 @@ def get_user_by_email(
 )
 def get_user(
     user_id: str = Path(..., description="ID do usuário"),
+    _: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     user = (
