@@ -23,6 +23,7 @@ def add_member(
         )
 
     new_member = TripMember(**member.model_dump())
+    new_member.role = "member"
 
     try:
         _get_trip_or_404(db=db, trip_id=member.trip_id)
@@ -77,6 +78,12 @@ def delete_member(db: Session, trip_id: str, user_id: str, is_self_removal: bool
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Membro não encontrado",
+            )
+
+        if member.role == "owner":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="O owner da viagem não pode ser removido.",
             )
 
         member_count = db.execute(
