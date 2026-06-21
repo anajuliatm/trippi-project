@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from typing import Optional
 from uuid import UUID
 from datetime import datetime
@@ -11,10 +11,26 @@ class FinanceCreate(BaseModel):
     description: str | None = None
     amount: Decimal
 
+    @field_validator('amount')
+    @classmethod
+    def amount_valido(cls, v):
+        if v <= 0:
+            raise ValueError('O valor deve ser maior que zero.')
+        return v
+
 class FinanceUpdate(BaseModel):
     type: Optional[str] = None
     description: Optional[str] = None
     amount: Optional[float] = None
+
+    @field_validator('amount', mode='before')
+    @classmethod
+    def amount_valido(cls, v):
+        if v is None:
+            return v
+        if v <= 0:
+            raise ValueError('O valor deve ser maior que zero.')
+        return v
 
 class FinanceResponse(FinanceCreate):
     id: UUID

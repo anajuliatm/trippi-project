@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from typing import Optional
 from uuid import UUID
 from datetime import date, time, datetime
@@ -12,7 +12,14 @@ class ItineraryCreate(BaseModel):
     activity_date: date
     activity_time: time | None = None
     notes: str | None = None
-    estimated_cost: Decimal = 0
+    estimated_cost: Decimal = Decimal(0)
+
+    @field_validator('estimated_cost')
+    @classmethod
+    def estimated_cost_valido(cls, v):
+        if v < 0:
+            raise ValueError('O custo estimado não pode ser negativo.')
+        return v
 
 class ItineraryUpdate(BaseModel):
     title: Optional[str] = None
@@ -22,6 +29,15 @@ class ItineraryUpdate(BaseModel):
     activity_time: Optional[time] = None
     notes: Optional[str] = None
     estimated_cost: Optional[float] = None
+
+    @field_validator('estimated_cost', mode='before')
+    @classmethod
+    def estimated_cost_valido(cls, v):
+        if v is None:
+            return v
+        if v < 0:
+            raise ValueError('O custo estimado não pode ser negativo.')
+        return v
 
 class ItineraryResponse(ItineraryCreate):
     id: UUID
